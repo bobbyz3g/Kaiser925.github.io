@@ -1,0 +1,645 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Bobby Zhang">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="写这篇文章的原因是记录一下自己为博客首页设置主题图的过程。 当前博客的主题使用的是 Fluid, 可以在主页设置主题图。一开始使用的是默认的图片，但是觉得不够个性化，于是就想设置一个专属的图片。 在思考选用何种图片的过程中，萌发了一个新的想法💡，就是让自己的主题图片定期去变化。但是并不想每次去手动修改图片的链接。于是便想搭建一个图片的服务，可以定期更新图片。 在思考如何搭建服务时，突然想到 bi">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用Cloudflare worker搭建壁纸服务">
+<meta property="og:url" content="https://blog.zhangliangliang.cc/post/cloudflare-wallpaper-server.html">
+<meta property="og:site_name" content="bobbyz3g&#39;s blogs.">
+<meta property="og:description" content="写这篇文章的原因是记录一下自己为博客首页设置主题图的过程。 当前博客的主题使用的是 Fluid, 可以在主页设置主题图。一开始使用的是默认的图片，但是觉得不够个性化，于是就想设置一个专属的图片。 在思考选用何种图片的过程中，萌发了一个新的想法💡，就是让自己的主题图片定期去变化。但是并不想每次去手动修改图片的链接。于是便想搭建一个图片的服务，可以定期更新图片。 在思考如何搭建服务时，突然想到 bi">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-02-17T03:31:10.000Z">
+<meta property="article:modified_time" content="2025-05-21T13:19:28.310Z">
+<meta property="article:author" content="Bobby Zhang">
+<meta property="article:tag" content="serverless">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>使用Cloudflare worker搭建壁纸服务 - bobbyz3g&#39;s blogs.</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"blog.zhangliangliang.cc","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>bobbyz3g</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://wallpaper.kaiser925.workers.dev') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="使用Cloudflare worker搭建壁纸服务"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-02-17 11:31" pubdate>
+          2022年2月17日 中午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          957 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          3 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">使用Cloudflare worker搭建壁纸服务</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>写这篇文章的原因是记录一下自己为博客首页设置主题图的过程。</p>
+<p>当前博客的主题使用的是 <a target="_blank" rel="noopener" href="https://github.com/fluid-dev/hexo-theme-fluid">Fluid</a>, 可以在主页设置主题图。一开始使用的是默认的图片，但是觉得不够个性化，于是就想设置一个专属的图片。</p>
+<p>在思考选用何种图片的过程中，萌发了一个新的想法💡，就是让自己的主题图片定期去变化。但是并不想每次去手动修改图片的链接。于是便想搭建一个图片的服务，可以定期更新图片。</p>
+<p>在思考如何搭建服务时，突然想到 <a target="_blank" rel="noopener" href="https://www.bing.com/">bing</a> 的每日背景图片都会改变，刚好符合我的要求。借助 bing 的接口，我只需要搭建一个静态的链接服务，将图片请求重定向至 bing 的图片链接即可。</p>
+<h3 id="获取-bing-的图片接口"><a href="#获取-bing-的图片接口" class="headerlink" title="获取 bing 的图片接口"></a>获取 bing 的图片接口</h3><p>根据 <a target="_blank" rel="noopener" href="https://stackoverflow.com/a/18096210/16435968">stackoverflow 上的回答</a> 获取到了 bing 的每日接口请求，获取不同响应接口体的接口如下:</p>
+<blockquote>
+<p><strong>XML:</strong> <a target="_blank" rel="noopener" href="http://www.bing.com/HPImageArchive.aspx?format=xml&amp;idx=0&amp;n=1&amp;mkt=en-US">http://www.bing.com/HPImageArchive.aspx?format=xml&amp;idx=0&amp;n=1&amp;mkt=en-US</a></p>
+<p><strong>JSON:</strong> <a target="_blank" rel="noopener" href="http://www.bing.com/HPImageArchive.aspx?format=js&amp;idx=0&amp;n=1&amp;mkt=en-US">http://www.bing.com/HPImageArchive.aspx?format=js&amp;idx=0&amp;n=1&amp;mkt=en-US</a></p>
+<p><strong>RSS:</strong> <a target="_blank" rel="noopener" href="http://www.bing.com/HPImageArchive.aspx?format=rss&amp;idx=0&amp;n=1&amp;mkt=en-US">http://www.bing.com/HPImageArchive.aspx?format=rss&amp;idx=0&amp;n=1&amp;mkt=en-US</a></p>
+</blockquote>
+<p>使用 <a target="_blank" rel="noopener" href="https://httpie.io/">httpie</a> 测试响应的接口</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">$ </span><span class="language-bash">http <span class="hljs-string">&quot;http://www.bing.com/HPImageArchive.aspx?format=js&amp;idx=0&amp;n=1&amp;mkt=en-US&quot;</span></span><br></code></pre></td></tr></table></figure>
+
+<p>响应的 Body 如下：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;images&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><br>        <span class="hljs-punctuation">&#123;</span><br>            <span class="hljs-attr">&quot;bot&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;copyright&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Flamenco dancers outside Palma de Majorca, Spain (© Torleif Svensson/Getty Images)&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;copyrightlink&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://www.bing.com/search?q=flamenco+dance&amp;form=hpcapt&amp;filters=HpDate%3a%2220220216_1830%22&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;drk&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;enddate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;20220217&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;fullstartdate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;202202161830&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;hs&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;hsh&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;6c3f5fff2e9235dd83cbc3e5353c5263&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;quiz&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/search?q=Bing+homepage+quiz&amp;filters=WQOskey:%22HPQuiz_20220216_FlamencoDance%22&amp;FORM=HPQUIZ&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;startdate&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;20220216&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;title&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;The art of flamenco&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;top&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;url&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/th?id=OHR.FlamencoDance_EN-IN6108897298_1920x1080.jpg&amp;rf=LaDigue_1920x1080.jpg&amp;pid=hp&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;urlbase&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/th?id=OHR.FlamencoDance_EN-IN6108897298&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;wp&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">false</span></span><br>        <span class="hljs-punctuation">&#125;</span><br>    <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;tooltips&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>        <span class="hljs-attr">&quot;loading&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Loading...&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-attr">&quot;next&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Next image&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-attr">&quot;previous&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Previous image&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-attr">&quot;walle&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;This image is not available to download as wallpaper.&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-attr">&quot;walls&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Download this image. Use of this image is restricted to wallpaper only.&quot;</span><br>    <span class="hljs-punctuation">&#125;</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
+
+<p>可以看到 images 下的 url 便是我们需要的图片链接。拼接 url 并请求</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">$ </span><span class="language-bash">http <span class="hljs-string">&quot;https://www.bing.com/th?id=OHR.FlamencoDance_EN-IN6108897298_1920x1080.jpg&amp;rf=LaDigue_1920x1080.jpg&amp;pid=hp&quot;</span> &gt; wallpapre.jpg</span><br></code></pre></td></tr></table></figure>
+
+<p>就可以得到当前 bing 的壁纸了。到这里我们就理顺了如何获取到图片的流程，接下来就是搭建图片服务了</p>
+<h3 id="服务搭建"><a href="#服务搭建" class="headerlink" title="服务搭建"></a>服务搭建</h3><p>如果从零开始，购买服务器并搭建图片服务，对于我需求来说做的额外工作是在是太多了。</p>
+<p>于是我使用<a target="_blank" rel="noopener" href="https://workers.cloudflare.com/"> cloudflare woker</a>， 使用 woker 不仅可以快速的搭建一个免费的服务，并且还可以获得一个域名。</p>
+<p>cloudflare 的免费账号的每日请求数也足够使用了，本着能省一点是一点的原则，我选择了它。</p>
+<p>首先是注册一个 cloudflare 的账号，并完成响应的设置。</p>
+<p>然后就是构建一个 woker 了，在 woker 的 <a target="_blank" rel="noopener" href="https://dash.cloudflare.com/3ebe93d1a2f956916b44850bff6cf618/workers/overview">dashbord</a> 选择 <strong>创建服务</strong>，定好名称，我的名字是 wallpaper，选择默认的启动器即可，点击创建服务即可。</p>
+<p>完成服务的创建之后，选中你的 woker，点击快速编辑，将触发器的代码填入，点击保存并部署。</p>
+<p>触发器代码：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs javascript"><span class="hljs-title function_">addEventListener</span>(<span class="hljs-string">&quot;fetch&quot;</span>, <span class="hljs-function">(<span class="hljs-params">event</span>) =&gt;</span> &#123;<br>  event.<span class="hljs-title function_">respondWith</span>(<br>    <span class="hljs-title function_">handleRequest</span>(event.<span class="hljs-property">request</span>).<span class="hljs-title function_">catch</span>(<br>      <span class="hljs-function">(<span class="hljs-params">err</span>) =&gt;</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Response</span>(err.<span class="hljs-property">stack</span>, &#123; <span class="hljs-attr">status</span>: <span class="hljs-number">500</span> &#125;)<br>    )<br>  );<br>&#125;);<br><br><span class="hljs-keyword">const</span> base = <span class="hljs-string">&quot;http://www.bing.com&quot;</span><br><span class="hljs-keyword">const</span> statusCode = <span class="hljs-number">302</span><br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">handleRequest</span>(<span class="hljs-params">request</span>) &#123;<br>  <span class="hljs-keyword">const</span> resp = <span class="hljs-keyword">await</span> <span class="hljs-title function_">fetch</span>(<span class="hljs-string">&quot;http://www.bing.com/HPImageArchive.aspx?format=js&amp;idx=0&amp;n=1&amp;mkt=en-US&quot;</span>)<br>  <span class="hljs-keyword">const</span> data = <span class="hljs-keyword">await</span> resp.<span class="hljs-title function_">json</span>()<br>  <span class="hljs-keyword">const</span> image = data[<span class="hljs-string">&quot;images&quot;</span>][<span class="hljs-number">0</span>][<span class="hljs-string">&quot;url&quot;</span>]<br>  <span class="hljs-keyword">const</span> destinationURL = base + image<br>  <span class="hljs-keyword">return</span> <span class="hljs-title class_">Response</span>.<span class="hljs-title function_">redirect</span>(destinationURL, statusCode)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这样，服务就部署完成了，在浏览器输入服务的地址，就可以看到图片的展示效果了。</p>
+<p>总共花费半天时间，0 ¥。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/serverless/" class="print-no-link">#serverless</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>使用Cloudflare worker搭建壁纸服务</div>
+      <div>https://blog.zhangliangliang.cc/post/cloudflare-wallpaper-server.html</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Bobby Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年2月17日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/post/go-generics.html" title="Go 泛型预览">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Go 泛型预览</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/post/go-has-no-refrence-value.html" title="在 Go 没有引用值">
+                        <span class="hidden-mobile">在 Go 没有引用值</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
