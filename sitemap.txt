@@ -1,3 +1,4 @@
+https://blog.zhangliangliang.cc/post/mysql-character-set.html
 https://blog.zhangliangliang.cc/post/mysql-replication.html
 https://blog.zhangliangliang.cc/post/mysql-optimize-table.html
 https://blog.zhangliangliang.cc/post/go-interface.html
