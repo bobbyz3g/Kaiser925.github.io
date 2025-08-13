@@ -1,0 +1,652 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Bobby Zhang">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="本文是对 Go 官方博客 More powerful Go execution traces 的翻译。 runtime&#x2F;trace  包包含了一个强大的工具, 用于理解和排查Go程序的问题。该功能允许生成在某段时间内每个goroutine 执行的 trace 记录。通过 go tool trace 命令(或优秀的开源工具 gotraceui ), 就可以可视化并探索这些 trace 记录中的数据。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="更强力的 Go 运行时 trace">
+<meta property="og:url" content="https://blog.zhangliangliang.cc/post/go-execution-traces.html">
+<meta property="og:site_name" content="bobbyz3g&#39;s blogs.">
+<meta property="og:description" content="本文是对 Go 官方博客 More powerful Go execution traces 的翻译。 runtime&#x2F;trace  包包含了一个强大的工具, 用于理解和排查Go程序的问题。该功能允许生成在某段时间内每个goroutine 执行的 trace 记录。通过 go tool trace 命令(或优秀的开源工具 gotraceui ), 就可以可视化并探索这些 trace 记录中的数据。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://go.dev/blog/execution-traces-2024/gotooltrace.png">
+<meta property="article:published_time" content="2024-03-20T14:12:26.000Z">
+<meta property="article:modified_time" content="2025-08-13T09:50:52.910Z">
+<meta property="article:author" content="Bobby Zhang">
+<meta property="article:tag" content="Go">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://go.dev/blog/execution-traces-2024/gotooltrace.png">
+  
+  
+  
+  <title>更强力的 Go 运行时 trace - bobbyz3g&#39;s blogs.</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"blog.zhangliangliang.cc","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>bobbyz3g</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://wallpaper.kaiser925.workers.dev') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="更强力的 Go 运行时 trace"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-03-20 22:12" pubdate>
+          2024年3月20日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          1.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          6 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">更强力的 Go 运行时 trace</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>本文是对 Go 官方博客 <a target="_blank" rel="noopener" href="https://go.dev/blog/execution-traces-2024">More powerful Go execution traces</a> 的翻译。</p>
+<p><a target="_blank" rel="noopener" href="https://go.dev/pkg/runtime/trace">runtime/trace </a> 包包含了一个强大的工具, 用于理解和排查Go程序的问题。该功能允许生成在某段时间内每个goroutine 执行的 trace 记录。通过 <code>go tool trace</code> 命令(或优秀的开源工具 <a target="_blank" rel="noopener" href="https://gotraceui.dev/">gotraceui</a> ), 就可以可视化并探索这些 trace 记录中的数据。</p>
+<p>trace 记录的神奇之处在于, 它可以轻松地揭示在其他情况下很难发现的程序行为。例如, 并发瓶颈导致许多goroutine 在同一个通道上阻塞, 这在CPU性能分析中可能很难看出来, 因为没有可执行代码被采样。但在执行追踪中, 执行的缺失将非常清晰地显示出来, 而且被阻塞的 goroutine 的堆栈跟踪也会快速指出问题的原因。</p>
+<p><img src="https://go.dev/blog/execution-traces-2024/gotooltrace.png" srcset="/img/loading.gif" lazyload></p>
+<p>Go开发者甚至可以在自己的程序中植入<a target="_blank" rel="noopener" href="https://go.dev/pkg/runtime/trace#Task">tasks</a>、<a target="_blank" rel="noopener" href="https://go.dev/pkg/runtime/trace#WithRegion">regions</a> 和 <a target="_blank" rel="noopener" href="https://go.dev/pkg/runtime/trace#Log">logs</a>, 用于将他们关注的高级问题与低级执行细节相关联。</p>
+<h2 id="问题是"><a href="#问题是" class="headerlink" title="问题是:"></a>问题是:</h2><p>不幸的是, 执行追踪中丰富的信息往往难以获取。以下四大问题一直阻碍了 trace 的使用:</p>
+<ul>
+<li> trace 开销很高。</li>
+<li> trace 记录缩放能力差,可能会变得太大无法分析。</li>
+<li>通常不清楚应该在何时开始 trace 以捕获特定的异常行为。</li>
+<li>由于缺乏解析和解释执行 trace 的公共包,只有最勇敢的Go程序员才能以编程方式分析追踪。</li>
+</ul>
+<p>如果你在过去几年使用过 trace ,可能会对其中一个或多个问题感到沮丧。但我们很高兴地告诉大家,在最近两个Go版本中,我们在上述四个领域都取得了重大进展。</p>
+<h2 id="低开销追踪"><a href="#低开销追踪" class="headerlink" title="低开销追踪"></a>低开销追踪</h2><p>在 Go 1.21之前, 对许多应用程序而言, trace 的运行时开销在 10-20% 的CPU之间, 这限制了 trace 只能在特定情况下使用, 而无法像CPU profiling那样持续使用。事实证明, trace 的大部分成本归结于堆栈回溯。运行时产生的许多事件都附带了堆栈跟踪,这对于实际识别 goroutine 在关键执行时刻的操作是非常有价值的。</p>
+<p>得益于Felix Geisendörfer 和 Nick Ripley 对优化堆栈回溯效率所做的工作, 执行 trace 的运行时CPU开销大幅降低,对许多应用程序而言下降到 1-2%。你可以在 <a target="_blank" rel="noopener" href="https://blog.felixge.de/reducing-gos-execution-tracer-overhead-with-frame-pointer-unwinding/">Felix 关于这个主题的精彩博文</a>中阅读更多相关工作的内容。</p>
+<h2 id="可扩展的追踪记录"><a href="#可扩展的追踪记录" class="headerlink" title="可扩展的追踪记录"></a>可扩展的追踪记录</h2><p>trace 格式及其事件的设计旨在提高产生效率, 但需要工具来解析和维护整个 trace 记录的状态。分析数百MB的追踪记录可能需要数GB的内存!</p>
+<p>不幸的是, 这个问题是 trace 生成方式的基本问题。为了保持运行时开销低,所有事件都被写入类似线程本地缓冲区。但这意味着事件出现的顺序与真实顺序不一致,分析 trace 的工具必须弄清楚实际发生的情况。</p>
+<p>在保持低开销的同时使 trace 记录可扩展的关键是, 偶尔分割正在生成的 trace 记录。每个分割点的行为有点像同时禁用和重新启用 trace 。到目前为止的所有 trace 数据将代表一个完整和自包含的 trace ,而新的 trace 数据将无缝地从中断处继续。</p>
+<p>你可能已经想到, 解决这个问题需要<a target="_blank" rel="noopener" href="https://go.dev/issue/60773">重新思考和重写运行时中 trace 实现</a>的很多基础部分。我们很高兴地说,这项工作已在 Go 1.22 中落地, 现在可以普遍使用了。重写带来了许多<a target="_blank" rel="noopener" href="https://go.dev/doc/go1.22#runtime/trace">优秀的改进</a>, 包括对<code>go tool trace</code>命令的一些改进。如果你有兴趣,所有细节都在<a target="_blank" rel="noopener" href="https://github.com/golang/proposal/blob/master/design/60773-execution-tracer-overhaul.md">设计文档</a>中。</p>
+<p>(注: <code>go tool trace</code> 仍会将整个 trace 记录加载到内存中, 但现在可以为 Go 1.22+ 程序生成的 trace 记录移除此限制。)</p>
+<h2 id="飞行记录"><a href="#飞行记录" class="headerlink" title="飞行记录"></a>飞行记录</h2><p>假设你在开发一个Web 服务, 某个RPC调用花费了很长时间。你无法在意识到 RPC 已经运行一段时间时开始 trace,因为导致请求变慢的根本原因已经发生,并且没有被记录下来。</p>
+<p>有一种称为飞行记录(flight recording)的技术可以帮助解决这个问题, 你可能已经在其他编程环境中熟悉它了。飞行记录的思路是持续进行 trace, 并始终保留最近的 trace 数据, 以防万一。然后, 一旦发生有趣的事情,程序只需将它所拥有的数据写出即可!</p>
+<p>在追踪记录可以分割之前, 这几乎是行不通的。但由于低开销使持续 trace变得可行,并且运行时现在可以在任何需要时分割 trace,因此实现飞行记录是直接了当的。</p>
+<p>因此,我们很高兴地宣布, <a target="_blank" rel="noopener" href="https://go.dev/pkg/golang.org/x/exp/trace#FlightRecorder">golang.org/x/exp/trace</a> 包中提供了一个飞行记录器实验。</p>
+<p>请尝试一下! 下面是一个示例,它设置飞行记录器来捕获一个耗时很长的HTTP请求,可以让你入门。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// Set up the flight recorder.</span><br>fr := trace.NewFlightRecorder()<br>fr.Start()<br><br><span class="hljs-comment">// Set up and run an HTTP server.</span><br><span class="hljs-keyword">var</span> once sync.Once<br>http.HandleFunc(<span class="hljs-string">&quot;/my-endpoint&quot;</span>, <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(w http.ResponseWriter, r *http.Request)</span></span> &#123;<br>    start := time.Now()<br><br>    <span class="hljs-comment">// Do the work...</span><br>    doWork(w, r)<br><br>    <span class="hljs-comment">// We saw a long request. Take a snapshot!</span><br>    <span class="hljs-keyword">if</span> time.Since(start) &gt; <span class="hljs-number">300</span>*time.Millisecond &#123;<br>        <span class="hljs-comment">// Do it only once for simplicity, but you can take more than one.</span><br>        once.Do(<span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">()</span></span> &#123;<br>            <span class="hljs-comment">// Grab the snapshot.</span><br>            <span class="hljs-keyword">var</span> b bytes.Buffer<br>            _, err = fr.WriteTo(&amp;b)<br>            <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>                log.Print(err)<br>                <span class="hljs-keyword">return</span><br>            &#125;<br>            <span class="hljs-comment">// Write it to a file.</span><br>            <span class="hljs-keyword">if</span> err := os.WriteFile(<span class="hljs-string">&quot;trace.out&quot;</span>, b.Bytes(), <span class="hljs-number">0</span>o755); err != <span class="hljs-literal">nil</span> &#123;<br>                log.Print(err)<br>                <span class="hljs-keyword">return</span><br>            &#125;<br>        &#125;)<br>    &#125;<br>&#125;)<br><br>log.Fatal(http.ListenAndServe(<span class="hljs-string">&quot;:8080&quot;</span>, <span class="hljs-literal">nil</span>))<br></code></pre></td></tr></table></figure>
+
+<p>如果你有任何正面或负面的反馈, 请在建议的 <a target="_blank" rel="noopener" href="https://go.dev/issue/62627">issue</a> 中分享!</p>
+<h2 id="追踪读取器API"><a href="#追踪读取器API" class="headerlink" title="追踪读取器API"></a>追踪读取器API</h2><p>伴随着重写 trace 实现的工作, 我们努力清理了其他 trace 内部机制,比如 <code>go tool trace</code>。这催生了一次尝试,旨在创建一个足够好的 trace 读取器API,可以共享并使 trace 更易访问。</p>
+<p>就像飞行记录器一样,我们很高兴地宣布,我们也有一个实验性的trace  读取器API, 我们希望能够分享。它与飞行记录器位于同一个包中,即 <a target="_blank" rel="noopener" href="https://go.dev/pkg/golang.org/x/exp/trace#FlightRecorder">golang.org/x/exp/trace</a> 。</p>
+<p>我们认为它足够好,可以在其基础上构建东西,所以请尝试一下! 下面是一个示例,它测量了goroutine阻塞事件中由于等待网络而阻塞的比例。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// Start reading from STDIN.</span><br>r, err := trace.NewReader(os.Stdin)<br><span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>    log.Fatal(err)<br>&#125;<br><br><span class="hljs-keyword">var</span> blocked <span class="hljs-type">int</span><br><span class="hljs-keyword">var</span> blockedOnNetwork <span class="hljs-type">int</span><br><span class="hljs-keyword">for</span> &#123;<br>    <span class="hljs-comment">// Read the event.</span><br>    ev, err := r.ReadEvent()<br>    <span class="hljs-keyword">if</span> err == io.EOF &#123;<br>        <span class="hljs-keyword">break</span><br>    &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &#123;<br>        log.Fatal(err)<br>    &#125;<br><br>    <span class="hljs-comment">// Process it.</span><br>    <span class="hljs-keyword">if</span> ev.Kind() == trace.EventStateTransition &#123;<br>        st := ev.StateTransition()<br>        <span class="hljs-keyword">if</span> st.Resource.Kind == trace.ResourceGoroutine &#123;<br>            id := st.Resource.Goroutine()<br>            from, to := st.GoroutineTransition()<br><br>            <span class="hljs-comment">// Look for goroutines blocking, and count them.</span><br>            <span class="hljs-keyword">if</span> from.Executing() &amp;&amp; to == trace.GoWaiting &#123;<br>                blocked++<br>                <span class="hljs-keyword">if</span> strings.Contains(st.Reason, <span class="hljs-string">&quot;network&quot;</span>) &#123;<br>                    blockedOnNetwork++<br>                &#125;<br>            &#125;<br>        &#125;<br>    &#125;<br>&#125;<br><span class="hljs-comment">// Print what we found.</span><br>p := <span class="hljs-number">100</span> * <span class="hljs-type">float64</span>(blockedOnNetwork) / <span class="hljs-type">float64</span>(blocked)<br>fmt.Printf(<span class="hljs-string">&quot;%2.3f%% instances of goroutines blocking were to block on the network\n&quot;</span>, p)<br></code></pre></td></tr></table></figure>
+
+<h2 id="非常感谢"><a href="#非常感谢" class="headerlink" title="非常感谢!"></a>非常感谢!</h2><p>这项工作能够完成,在很大程度上要归功于一年多前成立的<a target="_blank" rel="noopener" href="https://go.dev/issue/57175">诊断工作组</a>的帮助,该工作组是 Go 社区各利益相关方之间的合作,并向公众开放。</p>
+<p>我们想借此机会感谢过去一年里定期参加诊断会议的社区成员:Felix Geisendörfer、Nick Ripley、Rhys Hiltner、Dominik Honnef、Bryan Boreham和thepudds。</p>
+<p>你们进行的讨论、提供的反馈和付出的努力,是我们能够取得今天成就的关键。再次感谢!</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Go/" class="print-no-link">#Go</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>更强力的 Go 运行时 trace</div>
+      <div>https://blog.zhangliangliang.cc/post/go-execution-traces.html</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Bobby Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年3月20日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/post/mysql-replication.html" title="MySQL 数据复制">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">MySQL 数据复制</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/post/go-json-patch.html" title="Go JSON patch">
+                        <span class="hidden-mobile">Go JSON patch</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

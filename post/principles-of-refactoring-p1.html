@@ -1,0 +1,648 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Bobby Zhang">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="最近在重温 Martin Fowler 的 《重构》一书，在博客中记录一下阅读过程的心得笔记。 什么是重构重构是软件开发过程中经常会用到重构一次，但在使用时比较随意，Martin 则是认为这个词的使用需要更为严谨一下，因此给出了两个定义  重构作为一个名词时，是指对软件内部的一种调整，在不改变软件可观察行为的前提下，提供代码的可理解性，降低内部的修改难度。简单的理解便是，优化了程序内部的逻辑，降低">
+<meta property="og:type" content="article">
+<meta property="og:title" content="重构的原则(上)">
+<meta property="og:url" content="https://blog.zhangliangliang.cc/post/principles-of-refactoring-p1.html">
+<meta property="og:site_name" content="bobbyz3g&#39;s blogs.">
+<meta property="og:description" content="最近在重温 Martin Fowler 的 《重构》一书，在博客中记录一下阅读过程的心得笔记。 什么是重构重构是软件开发过程中经常会用到重构一次，但在使用时比较随意，Martin 则是认为这个词的使用需要更为严谨一下，因此给出了两个定义  重构作为一个名词时，是指对软件内部的一种调整，在不改变软件可观察行为的前提下，提供代码的可理解性，降低内部的修改难度。简单的理解便是，优化了程序内部的逻辑，降低">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-03-30T14:11:38.000Z">
+<meta property="article:modified_time" content="2025-08-13T09:50:52.914Z">
+<meta property="article:author" content="Bobby Zhang">
+<meta property="article:tag" content="重构">
+<meta property="article:tag" content="读书笔记">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>重构的原则(上) - bobbyz3g&#39;s blogs.</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"blog.zhangliangliang.cc","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>bobbyz3g</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://wallpaper.kaiser925.workers.dev') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="重构的原则(上)"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-03-30 22:11" pubdate>
+          2023年3月30日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          2.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          8 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">重构的原则(上)</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>最近在重温 Martin Fowler 的 《重构》一书，在博客中记录一下阅读过程的心得笔记。</p>
+<h2 id="什么是重构"><a href="#什么是重构" class="headerlink" title="什么是重构"></a>什么是重构</h2><p>重构是软件开发过程中经常会用到重构一次，但在使用时比较随意，Martin 则是认为这个词的使用需要更为严谨一下，因此给出了两个定义</p>
+<ol>
+<li>重构作为一个名词时，是指对软件内部的一种调整，在不改变软件可观察行为的前提下，提供代码的可理解性，降低内部的修改难度。简单的理解便是，优化了程序内部的逻辑，降低第三者的理解难度，以及基于原有逻辑进行修改时，不会觉得难以下手。</li>
+<li>重构作为一个动词时，是指使用一系列的重构手法，在不改变软件可观测行为的前提下，调整它的结构</li>
+</ol>
+<p>所以当我们谈论重构时，我们指的是在不改变代码外部行为的前提下，通过一系列微小且保持软件行为的的步骤对代码的结构和内部实现进行调整，使其更易于理解、维护、扩展和重用的过程</p>
+<p>每一个重构要么很小， 要么是通过多个小步骤组合而成。在重构的过程中，代码一直是可运行，并且行为与重构前是相同的。放弃当前的重构，代码也是不会受到影响的。</p>
+<blockquote>
+<p>如果有人说他们的代码在重构过程中有一两天不可用，那么基本上就可以确定，他们在做的事不是重构</p>
+</blockquote>
+<p>重构保证的是可观测行为，这意味着重构后程序的行为不一定与重构前的行为完全一致，但是对于用户关心的行为来说是不应该有任何改变的。也就是说重构可能会调整内部的接口，对内部函数的性能造成一定的影响。</p>
+<p>总而言之，重构是通过一系列微小且不影响观测行为的步骤，使软件更容易理解，更易于修改。</p>
+<h2 id="两顶帽子"><a href="#两顶帽子" class="headerlink" title="两顶帽子"></a>两顶帽子</h2><p>在开发软件的工作中， 将自己的时间分配给两种的功能，就像是两顶帽子，同一时间我们只能选择其中的一顶。这两顶帽子分别是“修改帽子”和“重构帽子”。</p>
+<h3 id="修改帽子"><a href="#修改帽子" class="headerlink" title="修改帽子"></a>修改帽子</h3><p>“修改帽子”是指我们进行代码修改时所带的“帽子”，通常是在实现新功能、修复问题或加入新特性时使用。在修改帽子下，我们通常关注的是完成任务并使代码能够正确运行，而不太关注代码的设计是否合理、可维护性如何等问题。因此，在修改帽子下，我们可能会编写一些不那么优秀的代码，可能会违反一些设计原则，甚至会引入一些技术债务。</p>
+<h3 id="重构帽子"><a href="#重构帽子" class="headerlink" title="重构帽子"></a>重构帽子</h3><p>相比之下，“重构帽子”则强调了代码的设计和质量。在重构帽子下，我们关注的是如何将代码重构为更加优秀、可读性更高、可维护性更好、更易于扩展和更易于重用的形式。通过重构，我们可以去除代码中的重复和冗余，改进代码的可读性和可维护性，遵循设计原则，减少技术债务。</p>
+<p>总的来说，“修改帽子”和“重构帽子”是两种不同的代码修改方式和目的。在开发过程中，我们应该时刻意识到这两种“帽子”的存在，当前戴的是哪一顶“帽子”，并且根据具体情况选择合适的“帽子”来进行代码修改，以实现高质量、高效率的软件开发。</p>
+<h2 id="为何重构"><a href="#为何重构" class="headerlink" title="为何重构"></a>为何重构</h2><p>在解释了什么是重构之后，我们需要进一步去思考为什么需要重构。重构并不是解决所有问题的“银弹”，而是一种重要的技术手段，应该根据具体情况和需求进行选择和应用，如果需要完成以下的目的，那么就可以使用重构来改善代码。</p>
+<h3 id="改进软件的设计"><a href="#改进软件的设计" class="headerlink" title="改进软件的设计"></a>改进软件的设计</h3><p>当缺乏重构时，代码的内部设计（架构）逐渐腐败变质，因为人们在修改代码时往往只关注短期目的而忽视整体的设计。这样的修改会导致代码失去原有的结构和清晰性，逐渐变得混乱、复杂和难以理解。</p>
+<p>随着这种修改的不断累积，软件的设计逐渐失去了它原有的结构，开发者也无法通过阅读代码来理解原来的设计。这种“技术债务”不断积累，最终导致代码的内部设计变得混乱不堪，甚至变得无法维护和扩展。</p>
+<p>设计欠佳的软件在修改时往往需要调整更多的代码，这是因为设计欠佳会导致代码结构混乱、逻辑复杂，同一个功能的代码可能分散在各处，或者有很多重复的代码。这样一来，每次修改时都需要花费更多的时间和精力来查找和调整相关的代码，同时也增加了引入新错误的风险。</p>
+<p>改进设计的一个重要目标便是消除重复的代码。通过重构和改进设计，我们可以使代码更加简单、清晰和易于理解，减少代码中的重复和冗余，提高代码的可重用性和可扩展性。</p>
+<p>消除重复的代码不仅可以提高代码质量和可维护性，还可以减少代码量，从而降低软件开发和维护的成本。通过重构和改进设计，我们可以使代码更加灵活、易于扩展和修改，从而满足不断变化的需求和技术环境。</p>
+<h3 id="使软件更容易理解"><a href="#使软件更容易理解" class="headerlink" title="使软件更容易理解"></a>使软件更容易理解</h3><p>编程可以被视为与计算机的一种“谈话”，我们需要通过计算机来达成特定的目的。为了让计算机执行相应的任务，我们需要编写代码来表达我们想要实现的功能和逻辑。编程连接了“我想要做什么”和“我需要计算机怎么做”之间的纽带。</p>
+<p>然而，我们的代码并不仅仅只有计算机可以阅读和理解。我们的代码还将被其他的开发者阅读和修改，包括我们自己在几个月或几年之后。如果我们的代码设计和实现难以理解，这将极大地阻碍后续开发者的工作。他们将花费大量的时间来阅读、理解、修改我们的代码，甚至可能需要重构整个系统，从而影响到整个项目的进度和效率。</p>
+<p>良好设计的代码是易于理解和修改的，可以为后续开发者节省时间和精力。相反，难以理解和修改的代码会导致开发效率低下，增加开发成本，并可能产生一系列的错误和缺陷。</p>
+<p>无论是为了我们自己，还是为了后续的开发者，我们都需要将代码写得更容易理解和维护，更清晰地表达我们的意图和设计思路。</p>
+<h3 id="帮助寻找-bug"><a href="#帮助寻找-bug" class="headerlink" title="帮助寻找 bug"></a>帮助寻找 bug</h3><p>在重构的过程中，我们需要仔细审视代码，并深入理解其意图和设计。这意味着我们需要逐行、逐句地阅读代码，并确保我们完全理解代码中所发生的事情。</p>
+<p>在理解代码的过程中，我们需要验证自己的假设和理解，这通常涉及到一些测试和试验。我们可能会对代码进行一些修改和调整，以验证我们对代码的理解是否正确。通过这个过程，我们可以发现一些隐藏在代码中的 bug，并解决它们。</p>
+<h3 id="提升开发速度"><a href="#提升开发速度" class="headerlink" title="提升开发速度"></a>提升开发速度</h3><p>一个内部质量良好的程序，具有清晰的代码结构和良好的设计，可以让开发者更轻松地添加新功能或修改已有功能。通过良好的设计，开发者可以更好地理解代码的意图和结构，更容易地找到需要修改的地方，并知道如何进行修改。这可以减少修改过程中引入新错误和缺陷的风险，并且可以提高代码的可维护性和可扩展性。</p>
+<p>另外，通过投入精力改善内部设计，程序的耐久度可以得到提高。内部设计良好的程序可以更好地适应需求的变化，更容易地进行维护和扩展。这可以保持软件长时间的高速开发，并且减少因为代码结构混乱而导致的不必要的开发和维护成本。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E9%87%8D%E6%9E%84/" class="print-no-link">#重构</a>
+      
+        <a href="/tags/%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/" class="print-no-link">#读书笔记</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>重构的原则(上)</div>
+      <div>https://blog.zhangliangliang.cc/post/principles-of-refactoring-p1.html</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Bobby Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年3月30日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/post/handle-error-gracefully.html" title="优雅的处理错误">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">优雅的处理错误</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/post/go-buffer-less-multipart-form.html" title="Go 低内存大文件上传">
+                        <span class="hidden-mobile">Go 低内存大文件上传</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

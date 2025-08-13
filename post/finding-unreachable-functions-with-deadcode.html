@@ -1,0 +1,659 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Bobby Zhang">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="这篇文章是对 Go 官方博客 Finding unreachable functions with deadcode 的翻译 项目源代码中存在但在任何执行过程中都无法访问的函数被称为“死代码”，会对代码库维护工作造成负担。今天，我们很高兴与您分享一个名为 deadcode 的工具，帮助您识别这些死代码。 12345$ go install golang.org&#x2F;x&#x2F;tools&#x2F;cmd&#x2F;deadco">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Go 使用 deadcode 查找无法访问的函数">
+<meta property="og:url" content="https://blog.zhangliangliang.cc/post/finding-unreachable-functions-with-deadcode.html">
+<meta property="og:site_name" content="bobbyz3g&#39;s blogs.">
+<meta property="og:description" content="这篇文章是对 Go 官方博客 Finding unreachable functions with deadcode 的翻译 项目源代码中存在但在任何执行过程中都无法访问的函数被称为“死代码”，会对代码库维护工作造成负担。今天，我们很高兴与您分享一个名为 deadcode 的工具，帮助您识别这些死代码。 12345$ go install golang.org&#x2F;x&#x2F;tools&#x2F;cmd&#x2F;deadco">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://go.dev/blog/deadcode-rta.svg">
+<meta property="article:published_time" content="2023-12-20T14:08:01.000Z">
+<meta property="article:modified_time" content="2025-08-13T09:50:52.909Z">
+<meta property="article:author" content="Bobby Zhang">
+<meta property="article:tag" content="Go">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://go.dev/blog/deadcode-rta.svg">
+  
+  
+  
+  <title>Go 使用 deadcode 查找无法访问的函数 - bobbyz3g&#39;s blogs.</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"blog.zhangliangliang.cc","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>bobbyz3g</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://wallpaper.kaiser925.workers.dev') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Go 使用 deadcode 查找无法访问的函数"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-12-20 22:08" pubdate>
+          2023年12月20日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          7 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Go 使用 deadcode 查找无法访问的函数</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>这篇文章是对 Go 官方博客 <a target="_blank" rel="noopener" href="https://go.dev/blog/deadcode">Finding unreachable functions with deadcode</a> 的翻译</p>
+<p>项目源代码中存在但在任何执行过程中都无法访问的函数被称为“死代码”，会对代码库维护工作造成负担。今天，我们很高兴与您分享一个名为 deadcode 的工具，帮助您识别这些死代码。</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sh">$ go install golang.org/x/tools/cmd/deadcode@latest<br>$ deadcode -<span class="hljs-built_in">help</span><br>The deadcode <span class="hljs-built_in">command</span> reports unreachable <span class="hljs-built_in">functions</span> <span class="hljs-keyword">in</span> Go programs.<br><br>Usage: deadcode [flags] package...<br></code></pre></td></tr></table></figure>
+
+<h2 id="案例"><a href="#案例" class="headerlink" title="案例"></a>案例</h2><p>在过去一年左右的时间里，我们对 VS Code 和其他编辑器使用的 Go 语言服务器 gopls 的结构进行了大量更改。一个典型的更改可能是重写一些现有的函数，并确保其新行为满足所有现有调用者的需求。有时，在付出所有努力之后，我们会沮丧地发现其中一个调用者实际上从未在任何执行中被调用，因此可以安全地将其删除。如果我们事先知道这一点，我们的重构任务就会更容易。 </p>
+<p>下面的简单 Go 程序说明了这个问题：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">module</span> example.com/greet<br><span class="hljs-attribute">go</span> <span class="hljs-number">1</span>.<span class="hljs-number">21</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">package</span> main<br><br><span class="hljs-keyword">import</span> <span class="hljs-string">&quot;fmt&quot;</span><br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>    <span class="hljs-keyword">var</span> g Greeter<br>    g = Helloer&#123;&#125;<br>    g.Greet()<br>&#125;<br><br><span class="hljs-keyword">type</span> Greeter <span class="hljs-keyword">interface</span>&#123; Greet() &#125;<br><br><span class="hljs-keyword">type</span> Helloer <span class="hljs-keyword">struct</span>&#123;&#125;<br><span class="hljs-keyword">type</span> Goodbyer <span class="hljs-keyword">struct</span>&#123;&#125;<br><br><span class="hljs-keyword">var</span> _ Greeter = Helloer&#123;&#125;  <span class="hljs-comment">// Helloer  implements Greeter</span><br><span class="hljs-keyword">var</span> _ Greeter = Goodbyer&#123;&#125; <span class="hljs-comment">// Goodbyer implements Greeter</span><br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(Helloer)</span></span> Greet()  &#123; hello() &#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(Goodbyer)</span></span> Greet() &#123; goodbye() &#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">hello</span><span class="hljs-params">()</span></span>   &#123; fmt.Println(<span class="hljs-string">&quot;hello&quot;</span>) &#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">goodbye</span><span class="hljs-params">()</span></span> &#123; fmt.Println(<span class="hljs-string">&quot;goodbye&quot;</span>) &#125;<br></code></pre></td></tr></table></figure>
+
+<p>当我们执行它时，它会输出 hello</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs routeros">$ go <span class="hljs-built_in">run</span> .<br>hello<br></code></pre></td></tr></table></figure>
+
+<p>从程序的输出可以清楚地看出，它执行了 hello 函数，但没有执行 goodbye 函数。不太明显的是，goodbye 函数永远不会被调用。然而，我们不能简单地删除 goodbye，因为它是 Goodbyer.Greet 方法所必需的，而 Goodbyer.Greet 方法又是实现 Greeter 接口所必需的，我们可以看到 Greeter 接口的 Greet 方法是从 main 调用的。但是如果我们从 main 开始往前分析，可以看到没有 Goodbyer 值被创建过，所以 main 中的 Greet 调用只能到达 Helloer.Greet。这就是 deadcode 工具所使用的算法背后的想法。</p>
+<p>当我们使用 deadcode 来检查这个程序时，该工具会告诉我们 goodbye 函数和 Goodbyer.Greet 方法都是不可到达的</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go">$ deadcode .<br>greet.<span class="hljs-keyword">go</span>:<span class="hljs-number">23</span>: unreachable <span class="hljs-function"><span class="hljs-keyword">func</span>: <span class="hljs-title">goodbye</span></span><br>greet.<span class="hljs-keyword">go</span>:<span class="hljs-number">20</span>: unreachable <span class="hljs-function"><span class="hljs-keyword">func</span>: <span class="hljs-title">Goodbyer</span>.<span class="hljs-title">Greet</span></span><br></code></pre></td></tr></table></figure>
+
+<p>有了这个信息之后，我们就可以安全的删除这两个函数，以及 Groodbyer 接口。</p>
+<p>该工具还可以解释为什么 hello 函数是活跃的。它会从 main 开始，以函数调用链的形式显示到达 hello 函数的路径</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql">$ deadcode <span class="hljs-operator">-</span>whylive<span class="hljs-operator">=</span>example.com<span class="hljs-operator">/</span>greet.hello .<br>                  example.com<span class="hljs-operator">/</span>greet.main<br><span class="hljs-keyword">dynamic</span><span class="hljs-variable">@L0008</span> <span class="hljs-comment">--&gt; example.com/greet.Helloer.Greet</span><br> <span class="hljs-keyword">static</span><span class="hljs-variable">@L0019</span> <span class="hljs-comment">--&gt; example.com/greet.hello</span><br></code></pre></td></tr></table></figure>
+
+<p>它的输出被设计为容易从命令行读取，但是你也可以通过 <code>-json</code> 或者<code>-f=template</code> 标志来指定更加丰富的输出以供其他工具使用。</p>
+<h2 id="deadecode-是如何工作的"><a href="#deadecode-是如何工作的" class="headerlink" title="deadecode 是如何工作的"></a>deadecode 是如何工作的</h2><p>deadcode 工具对指定的包进行 <a target="_blank" rel="noopener" href="https://pkg.go.dev/golang.org/x/tools/go/packages">加载</a>, <a target="_blank" rel="noopener" href="https://pkg.go.dev/go/parser">解析</a>, 以及<a target="_blank" rel="noopener" href="https://pkg.go.dev/go/types">类型检查</a> ，然后将它们转换为类似于典型编译器的<a target="_blank" rel="noopener" href="https://pkg.go.dev/golang.org/x/tools/go/ssa">中间表示</a>。</p>
+<p>然后，它使用一种称为快速类型分析（Rapid Type Analysis，<a target="_blank" rel="noopener" href="https://pkg.go.dev/golang.org/x/tools/go/callgraph/rta">RTA</a>）的算法来构建可访问函数的集合。该集合最初仅包含每个 main 包的入口点：main 函数和包初始化函数，用于分配全局变量并调用名为 init 的函数。</p>
+<p>RTA 会查看每个可达函数体内的语句，以收集三种信息：它直接调用的函数集合；它通过接口方法进行的动态调用集合；以及它转换为接口的类型集合。</p>
+<p>直接函数调用很简单：我们只需将被调用者添加到可达函数的集合中，如果是第一次遇到被调用者，我们会像对待 main 函数一样检查它的函数体。 </p>
+<p>通过接口方法进行的动态调用则比较棘手，因为我们不知道实现该接口的类型集合。我们不想假设程序中所有类型匹配的方法都是调用的可能目标，因为其中一些类型可能只会从死代码中实例化！这就是我们收集转换为接口的类型集合的原因：这种转换使得这些类型中的每一个都可以从 main 访问，因此它们的方法现在可以成为动态调用的目标。 </p>
+<p>这导致了一种鸡生蛋蛋生鸡的情况。当我们遇到每个新的可达函数时，我们会发现更多的接口方法调用和更多的具体类型到接口类型的转换。但是，随着这两个集合（接口方法调用 × 具体类型）的叉积越来越大，我们会发现新的可达函数。这类问题被称为“动态规划”，可以通过（概念上）在一个大的二维表格中打勾来解决，随着我们前进，添加行和列，直到没有更多的勾要添加。最终表格中的勾告诉我们什么是可达的；空白单元格是死代码。</p>
+<p><img src="https://go.dev/blog/deadcode-rta.svg" srcset="/img/loading.gif" lazyload alt="deadcode-rta"></p>
+<p>对（非方法）函数的动态调用类似于单个方法的接口。使用反射进行的调用被认为可以访问接口转换中使用的任何类型的任何方法，或者使用 reflect 包从一个类型派生的任何类型。但原则在所有情况下都是一样的。</p>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>RTA 是一种全程序分析方法。这意味着它始终从 main 函数开始并向前工作：你不能从像 encoding/json 这样的库包开始。 </p>
+<p>然而，大多数库包都有测试，而测试有 main 函数。我们看不到这些函数，因为它们是在 go test 的幕后生成的，但我们可以使用 -test 标志将它们包含在分析中。 如果这报告库包中的函数是死的，这是一个迹象，表明你的测试覆盖率可以改进。例如，这个命令列出了 encoding/json 中所有没有被任何测试覆盖的函数：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs pgsql">$ deadcode -test -<span class="hljs-keyword">filter</span>=<span class="hljs-keyword">encoding</span>/<span class="hljs-type">json</span> <span class="hljs-keyword">encoding</span>/<span class="hljs-type">json</span><br><span class="hljs-keyword">encoding</span>/<span class="hljs-type">json</span>/decode.go:<span class="hljs-number">150</span>:<span class="hljs-number">31</span>: unreachable func: UnmarshalFieldError.Error<br><span class="hljs-keyword">encoding</span>/<span class="hljs-type">json</span>/encode.go:<span class="hljs-number">225</span>:<span class="hljs-number">28</span>: unreachable func: InvalidUTF8Error.Error<br></code></pre></td></tr></table></figure>
+
+<p><code>-filter</code> 标志将输出限制为匹配正则表达式的包。默认情况下，该工具会报告初始模块中的所有包。</p>
+<h2 id="可靠性"><a href="#可靠性" class="headerlink" title="可靠性"></a>可靠性</h2><p>所有静态分析工具都必然会产生对目标程序可能的动态行为的不完美近似。一个工具的假设和推断可能是“可靠的”，意味着保守但可能过于谨慎，也可能是“不可靠的”，意味着乐观但并不总是正确的。</p>
+<p> deadcode 工具也不例外：它必须通过函数和接口值或使用反射来近似动态调用的目标集合。在这方面，该工具是可靠的。换句话说，如果它报告一个函数是死代码，这意味着该函数即使通过这些动态机制也不能被调用。但是，该工具可能无法报告一些实际上永远不能执行的函数。</p>
+<p> deadcode 工具还必须近似从不是用 Go 编写的函数（它看不到）所进行的调用集合。在这方面，该工具是不可靠的。它的分析不知道专门从汇编代码调用的函数，也不知道由 go:linkname 指令引起的函数别名。幸运的是，这两个特性很少在 Go 运行时之外使用。</p>
+<h2 id="尝试一下"><a href="#尝试一下" class="headerlink" title="尝试一下"></a>尝试一下</h2><p>我们会定期在我们的项目上运行 deadcode，尤其是在重构工作之后，以帮助识别程序中不再需要的部分。</p>
+<p> 在清理死代码后，您可以专注于消除那些已经寿终正寝但却顽固地存在的代码，这些代码会继续消耗您的生命力。我们称这种不死的函数为“吸血鬼代码”！ 请试一试：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs swift">$ go install golang.org<span class="hljs-regexp">/x/</span>tools<span class="hljs-regexp">/cmd/</span>deadcode<span class="hljs-meta">@latest</span><br></code></pre></td></tr></table></figure>
+
+<p>我们发现这是很有用的， 希望对你也是。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Go/" class="print-no-link">#Go</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Go 使用 deadcode 查找无法访问的函数</div>
+      <div>https://blog.zhangliangliang.cc/post/finding-unreachable-functions-with-deadcode.html</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Bobby Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年12月20日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/post/go-errors-are-value.html" title="Go 错误是值">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Go 错误是值</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/post/tla-operator-and-values.html" title="TLA+ 算子和值">
+                        <span class="hidden-mobile">TLA+ 算子和值</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

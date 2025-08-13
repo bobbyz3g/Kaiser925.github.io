@@ -1,0 +1,694 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Bobby Zhang">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="这篇文章是对 Go 官方博客 Deconstructing Type Parameters 的翻译. 所使用的 Go 版本为 1.21. Slice 包的函数签名slice.Clone 函数非常的简单，它复制了任何类型的 slice 123func Clone[S ~[]E, E any](s S) S &amp;#123;    return append(s[:0:0], s...)&amp;#125;  上">
+<meta property="og:type" content="article">
+<meta property="og:title" content="解构类型参数">
+<meta property="og:url" content="https://blog.zhangliangliang.cc/post/deconstruction-type-parameters.html">
+<meta property="og:site_name" content="bobbyz3g&#39;s blogs.">
+<meta property="og:description" content="这篇文章是对 Go 官方博客 Deconstructing Type Parameters 的翻译. 所使用的 Go 版本为 1.21. Slice 包的函数签名slice.Clone 函数非常的简单，它复制了任何类型的 slice 123func Clone[S ~[]E, E any](s S) S &amp;#123;    return append(s[:0:0], s...)&amp;#125;  上">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-11-22T14:27:41.000Z">
+<meta property="article:modified_time" content="2025-08-13T09:50:52.909Z">
+<meta property="article:author" content="Bobby Zhang">
+<meta property="article:tag" content="Go">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>解构类型参数 - bobbyz3g&#39;s blogs.</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"blog.zhangliangliang.cc","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>bobbyz3g</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://wallpaper.kaiser925.workers.dev') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="解构类型参数"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-11-22 22:27" pubdate>
+          2023年11月22日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          2.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          8 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">解构类型参数</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>这篇文章是对 Go 官方博客 <a target="_blank" rel="noopener" href="https://go.dev/blog/deconstructing-type-parameters">Deconstructing Type Parameters</a> 的翻译. 所使用的 Go 版本为 1.21.</p>
+<h2 id="Slice-包的函数签名"><a href="#Slice-包的函数签名" class="headerlink" title="Slice 包的函数签名"></a>Slice 包的函数签名</h2><p><a target="_blank" rel="noopener" href="https://pkg.go.dev/slices#Clone">slice.Clone</a> 函数非常的简单，它复制了任何类型的 slice</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">Clone</span>[<span class="hljs-title">S</span> ~[]<span class="hljs-title">E</span>, <span class="hljs-title">E</span> <span class="hljs-title">any</span>]<span class="hljs-params">(s S)</span></span> S &#123;<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">append</span>(s[:<span class="hljs-number">0</span>:<span class="hljs-number">0</span>], s...)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>上面的方法是可行的, 因为向零容量的 slice 追加元素会分配一个新的底层数组。我们可以看到函数体的长度竟然比函数签名还要短,这不仅因为函数体本身很简短,也因为签名有点长。在这篇博文中,我们将解释为什么签名是这样写的。</p>
+<h2 id="简单的复制"><a href="#简单的复制" class="headerlink" title="简单的复制"></a>简单的复制</h2><p>我们来先写一个简单的泛型 <code>Clone</code> 函数。这不是 <code>slices</code> 包中的那个。我们想要一个可以接受任意元素类型的 slice,并返回一个新的 slice。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">Clone1</span>[<span class="hljs-title">E</span> <span class="hljs-title">any</span>]<span class="hljs-params">(s []E)</span></span> []E &#123;<br>    <span class="hljs-comment">// body omitted</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>带有单个类型参数<code>E</code>的泛型函数<code>Clone1</code>有一个参数<code>s</code>,它是一个<code>E</code>类型的 slice,并返回同样类型的 slice。对于熟悉 Go 泛型的人来说,这个签名很简单明了。</p>
+<p>然而,这里有一个问题。在 Go 中命名的 slice 类型不常见, 但确实有人在使用。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// MySlice is a slice of strings with a special String method.</span><br><span class="hljs-keyword">type</span> MySlice []<span class="hljs-type">string</span><br><br><span class="hljs-comment">// String returns the printable version of a MySlice value.</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(s MySlice)</span></span> String() <span class="hljs-type">string</span> &#123;<br>    <span class="hljs-keyword">return</span> strings.Join(s, <span class="hljs-string">&quot;+&quot;</span>)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>假设我们现在想要复制一个 <code>MySlice</code>, 然后获取其可打印版本, 但是字符串按排序顺序排列。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">PrintSorted</span><span class="hljs-params">(ms MySlice)</span></span> <span class="hljs-type">string</span> &#123;<br>    c := Clone1(ms)<br>    slices.Sort(c)<br>    <span class="hljs-keyword">return</span> c.String() <span class="hljs-comment">// FAILS TO COMPILE</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>不幸的是这段代码无法正常工作，编译器会给出错误：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go">c.String undefined (<span class="hljs-keyword">type</span> []<span class="hljs-type">string</span> has no field or method String)<br></code></pre></td></tr></table></figure>
+
+<p>如果我们手动实例化 <code>Clone1</code>,  用类型参数替换类型实参,就可以看到问题所在</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">InstantiatedClone1</span><span class="hljs-params">(s []<span class="hljs-type">string</span>)</span></span> []<span class="hljs-type">string</span><br></code></pre></td></tr></table></figure>
+
+<p>Go 的<a target="_blank" rel="noopener" href="https://go.dev/ref/spec#Assignability">赋值规则</a>允许我们将 <code>MySlice</code> 类型的值传递给 <code>[]string</code> 类型的参数,所以调用 <code>Clone1</code> 没问题。但是 <code>Clone1</code> 会返回一个 <code>[]string</code> 类型的值,而不是 <code>MySlice</code> 类型的值。<code>[]string</code> 类型没有 <code>String</code> 方法,所以编译器会报错。</p>
+<h2 id="灵活的复制"><a href="#灵活的复制" class="headerlink" title="灵活的复制"></a>灵活的复制</h2><p>为了解决这个问题, 我们必须编写一个版本的<code>Clone</code>, 它返回与其参数相同类型的值。如果我们能做到这一点, 那么当我们使用 <code>MySlice</code> 类型的值调用 <code>Clone</code> 时, 它将返回 <code>MySlice</code> 类型的结果。</p>
+<p>我们知道它的样子大致如下</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">Clone2</span>[<span class="hljs-title">S</span> ?]<span class="hljs-params">(s S)</span></span> S <span class="hljs-comment">// INVALID</span><br></code></pre></td></tr></table></figure>
+
+<p>这个 <code>Clone2</code> 函数返回与其参数相同类型的值。</p>
+<p>这里我用 <code>?</code> 写了一个约束条件, 但是那只是一个占位符。为了使这个函数工作, 我们需要编写一个约束条件, 以便编写函数体。对于 <code>Clone1</code>,我们可以对元素类型使用 <code>any</code> 约束。但对于 <code>Clone2</code> 这行不通: 我们需要 <code>s</code> 是 slice 类型。</p>
+<p>由于我们知道需要一个 slice,所以 <code>S</code> 的约束条件必须是一个 slice。我们不关心 slice 元素类型是什么,所以像在 <code>Clone1</code> 中一样,我们称它为 <code>E</code>。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">Clone3</span>[<span class="hljs-title">S</span> []<span class="hljs-title">E</span>]<span class="hljs-params">(s S)</span></span> S <span class="hljs-comment">// INVALID</span><br></code></pre></td></tr></table></figure>
+
+<p>这仍然无效,因为我们还没有声明 <code>E</code>。<code>E</code> 的类型参数可以是任何类型, 这意味着它本身也必须是一个类型参数。由于它可以是任何类型,所以它的约束条件是 <code>any</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">Clone4</span>[<span class="hljs-title">S</span> []<span class="hljs-title">E</span>, <span class="hljs-title">E</span> <span class="hljs-title">any</span>]<span class="hljs-params">(s S)</span></span> S<br></code></pre></td></tr></table></figure>
+
+<p>这已经很接近了,至少它可以编译通过, 但我们还没完全搞定。如果我们编译这个版本, 在调用 <code>Clone4(ms)</code> 时会产生错误。</p>
+<figure class="highlight applescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs applescript">MySlice <span class="hljs-keyword">does</span> <span class="hljs-keyword">not</span> satisfy []<span class="hljs-built_in">string</span> (possibly missing ~ <span class="hljs-keyword">for</span> []<span class="hljs-built_in">string</span> <span class="hljs-keyword">in</span> []<span class="hljs-built_in">string</span>)<br></code></pre></td></tr></table></figure>
+
+<p>编译器告诉我们,不能为类型参数 <code>S</code> 使用类型实参 <code>MySlice</code>,因为 <code>MySlice</code> 不满足约束条件 <code>[]E</code>。这是因为作为约束条件的 <code>[]E</code> 只允许字面量 slice 类型,如 <code>[]string</code>。它不允许命名类型如 <code>MySlice</code>。</p>
+<h2 id="基础类型约束"><a href="#基础类型约束" class="headerlink" title="基础类型约束"></a>基础类型约束</h2><p>正如错误消息所暗示的,答案是添加一个 <code>~</code> 符号。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">Clone5</span>[<span class="hljs-title">S</span> ~[]<span class="hljs-title">E</span>, <span class="hljs-title">E</span> <span class="hljs-title">any</span>]<span class="hljs-params">(s S)</span></span> S<br></code></pre></td></tr></table></figure>
+
+<p>再重复一遍,编写类型参数和约束条件 <code>[S []E, E any]</code> 意味着 <code>S</code> 的类型实参可以是任何未命名的 slice 类型, 但不能是定义为 slice 字面量的命名类型。</p>
+<p>编写 <code>[S ~[]E, E any]</code>, 带有 <code>~</code> 符号,意味着 <code>S</code> 的类型实参可以是任何基础类型为 slice 类型的类型。</p>
+<p>对于任何命名类型 <code>type T1 T2</code>,<code>T1</code> 的基础类型就是 <code>T2</code> 的基础类型。预声明类型如 <code>int</code> 或字面量类型如 <code>[]string</code> 的基础类型就是它们自己。详细信息请参阅语言规范。在我们的示例中, <code>MySlice</code> 的基础类型是 <code>[]string</code>。</p>
+<p>由于 <code>MySlice</code> 的基础类型是一个 slice, 所以我们可以将 <code>MySlice</code> 类型的参数传递给 <code>Clone5</code>。你可能已经注意到, <code>Clone5</code> 的签名与 <code>slices.Clone</code> 的签名相同。我们终于得到了我们想要的结果。</p>
+<p>在继续之前,让我们讨论一下为什么 Go 语法要求使用 <code>~</code>。可能看起来我们总是希望允许传递 <code>MySlice</code>,那么为什么不将其作为默认值呢?或者,如果我们需要支持精确匹配,为什么不把事情翻转过来,使得约束条件 <code>[]E</code> 允许命名类型,而约束条件 <code>=[]E</code> 仅允许 slice 类型字面量?</p>
+<p>为了解释这一点, 我们先观察到像 <code>[T ~MySlice]</code> 这样的类型参数列表是没有意义的。这是因为 <code>MySlice</code> 不是任何其他类型的基础类型。</p>
+<p>例如, 如果我们有这样的定义 <code>type MySlice2 MySlice</code>, 那么 <code>MySlice2</code> 的基础类型是 <code>[]string</code>, 而不是 <code>MySlice</code>。因此, <code>[T ~MySlice]</code> 要么根本不允许任何类型, 要么与 <code>[T MySlice]</code> 相同, 仅匹配 <code>MySlice</code>。无论哪种方式, <code>[T ~MySlice]</code> 都没有用。为了避免这种困惑, 语言禁止 <code>[T ~MySlice]</code>, 编译器会产生像下面这样的错误</p>
+<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ada">invalid <span class="hljs-keyword">use</span> <span class="hljs-keyword">of</span> ~ (underlying <span class="hljs-keyword">type</span> <span class="hljs-type">of </span>MySlice <span class="hljs-keyword">is</span> []string)<br></code></pre></td></tr></table></figure>
+
+<p>如果 Go 不要求波浪号, 所以 <code>[S []E]</code> 会匹配任何基础类型为 <code>[]E</code> 的类型, 然后我们就不得不定义 <code>[S MySlice]</code> 的含义。</p>
+<p>我们可以禁止 <code>[S MySlice]</code>, 或者说 <code>[S MySlice]</code> 只匹配 <code>MySlice</code>,但这两种方法在预声明类型上都会遇到问题。预声明类型, 如 <code>int</code> 是它自己的基础类型。我们希望人们能够编写接受任何基础类型为 <code>int</code> 的类型参数的约束条件。在现有的语言中, 他们可以通过编写 <code>[T ~int]</code> 来实现这一点。如果我们不要求波浪号, 我们仍然需要一种方法来表示“任何基础类型为 <code>int</code> 的类型”。最自然的表达方式就是 <code>[T int]</code>。这意味着 <code>[T MySlice]</code> 和 <code>[T int]</code> 的行为会有所不同, 尽管它们看起来非常相似。</p>
+<p>我们可能会说 <code>[S MySlice]</code> 匹配任何基础类型是 <code>MySlice</code> 的基础类型的类型,但这使得 <code>[S MySlice]</code> 变得不必要且令人困惑。</p>
+<p>我们认为要求使用 <code>~</code> 并非常清楚地表示我们是在匹配基础类型而不是类型本身是更好的选择。</p>
+<h2 id="类型推断"><a href="#类型推断" class="headerlink" title="类型推断"></a>类型推断</h2><p>现在我们已经解释了 <code>slices.Clone</code> 的签名, 让我们看看如何通过类型推断简化实际使用 <code>slices.Clone</code>。请记住, <code>Clone</code> 的签名是:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">Clone</span>[<span class="hljs-title">S</span> ~[]<span class="hljs-title">E</span>, <span class="hljs-title">E</span> <span class="hljs-title">any</span>]<span class="hljs-params">(s S)</span></span> S<br></code></pre></td></tr></table></figure>
+
+<p>调用 <code>slices.Clone</code> 会将一个 slice 传递给参数 <code>s</code>。简单的类型推断将允许编译器推断类型参数 <code>S</code> 的类型实参是传递给 <code>Clone</code> 的 slice 的类型。然后, 类型推断足够强大, 可以看出类型参数 <code>E</code> 的类型实参是传递给 <code>S</code> 的类型实参的元素类型。</p>
+<p>这意味着我们可以写:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go">c := Clone(ms)<br></code></pre></td></tr></table></figure>
+
+<p>而不必写:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go">c := Clone[MySlice, <span class="hljs-type">string</span>](ms)<br></code></pre></td></tr></table></figure>
+
+<p>如果我们引用 <code>Clone</code> 而不调用它, 我们确实需要为 <code>S</code> 指定一个类型实参, 因为编译器没有任何可以用于推断的信息。幸运的是, 在这种情况下, 类型推断能够从 <code>S</code> 的实参中推断出 <code>E</code> 的类型实参, 所以我们不必单独指定它。</p>
+<p>也就是说,我们可以写:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go">myClone := Clone[MySlice]<br></code></pre></td></tr></table></figure>
+
+<p>而不必写:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go">myClone := Clone[MySlice, <span class="hljs-type">string</span>]<br></code></pre></td></tr></table></figure>
+
+<p>我们在这里使用的通用技术是使用另一个类型参数 E 来定义一个类型参数 S，这是一种在泛型函数签名中解构类型的方法。通过解构类型，我们可以对类型的各个方面进行命名和约束。</p>
+<p>例如，以下是 maps.Clone 的签名：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">Clone</span>[<span class="hljs-title">M</span> ~<span class="hljs-title">map</span>[<span class="hljs-title">K</span>]<span class="hljs-title">V</span>, <span class="hljs-title">K</span> <span class="hljs-title">comparable</span>, <span class="hljs-title">V</span> <span class="hljs-title">any</span>]<span class="hljs-params">(m M)</span></span> M<br></code></pre></td></tr></table></figure>
+
+<p>与 slices.Clone 一样，我们使用类型参数来指定参数 m 的类型，然后使用另外两个类型参数 K 和 V 来解构类型。 在 maps.Clone 中，我们将 K 约束为可比较的，因为这是 map 键类型所必需的。我们可以根据需要以任何方式约束基础类型。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">WithStrings</span>[<span class="hljs-title">S</span> ~[]<span class="hljs-title">E</span>, <span class="hljs-title">E</span> <span class="hljs-title">interface</span></span> &#123; String() <span class="hljs-type">string</span> &#125;](s S) (S, []<span class="hljs-type">string</span>)<br></code></pre></td></tr></table></figure>
+
+<p>这意味着 <code>WithStrings</code> 的参数必须是一个元素类型具有 <code>String</code> 方法的切片类型。</p>
+<p>由于所有 Go 类型都可以从基础类型构建，因此我们可以始终使用类型参数来解构这些类型并根据需要对其进行约束。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Go/" class="print-no-link">#Go</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>解构类型参数</div>
+      <div>https://blog.zhangliangliang.cc/post/deconstruction-type-parameters.html</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Bobby Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年11月22日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/post/tla-conceptual-overview.html" title="TLA+，概念初识">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">TLA+，概念初识</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/post/go-driver-conn-issue.html" title="commands out of sync. Did you run multiple statements at once?">
+                        <span class="hidden-mobile">commands out of sync. Did you run multiple statements at once?</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

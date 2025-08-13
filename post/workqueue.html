@@ -1,0 +1,700 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Bobby Zhang">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="介绍Workqueue 是 client-go 提供的一个工作队列，主要的作用是提供一个先进先出的队列，顺序执行队列中的任务。 workqueue 与普通队列的不同之处在于，它支持对队列中的元素进行标记和去重。 workqueue 的基本特性如下：  有序：所有的元素按照添加的顺序进行处理  标记元素：标记元素是否被处理，在处理时重新排队  去重：相同的元素在同一时间不会被并发的处理，一个元素在被">
+<meta property="og:type" content="article">
+<meta property="og:title" content="workqueue">
+<meta property="og:url" content="https://blog.zhangliangliang.cc/post/workqueue.html">
+<meta property="og:site_name" content="bobbyz3g&#39;s blogs.">
+<meta property="og:description" content="介绍Workqueue 是 client-go 提供的一个工作队列，主要的作用是提供一个先进先出的队列，顺序执行队列中的任务。 workqueue 与普通队列的不同之处在于，它支持对队列中的元素进行标记和去重。 workqueue 的基本特性如下：  有序：所有的元素按照添加的顺序进行处理  标记元素：标记元素是否被处理，在处理时重新排队  去重：相同的元素在同一时间不会被并发的处理，一个元素在被">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://image-1304291812.cos.ap-shanghai.myqcloud.com/workqueue-add.png">
+<meta property="og:image" content="https://image-1304291812.cos.ap-shanghai.myqcloud.com/token-bucket.png">
+<meta property="article:published_time" content="2022-07-11T13:53:05.000Z">
+<meta property="article:modified_time" content="2025-08-13T09:50:52.916Z">
+<meta property="article:author" content="Bobby Zhang">
+<meta property="article:tag" content="Go">
+<meta property="article:tag" content="k8s">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://image-1304291812.cos.ap-shanghai.myqcloud.com/workqueue-add.png">
+  
+  
+  
+  <title>workqueue - bobbyz3g&#39;s blogs.</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"blog.zhangliangliang.cc","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>bobbyz3g</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://wallpaper.kaiser925.workers.dev') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="workqueue"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-07-11 21:53" pubdate>
+          2022年7月11日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          1.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          6 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">workqueue</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>Workqueue 是 <a href="k8s.io/client-go">client-go</a> 提供的一个工作队列，主要的作用是提供一个先进先出的队列，顺序执行队列中的任务。</p>
+<p>workqueue 与普通队列的不同之处在于，它支持对队列中的元素进行标记和去重。</p>
+<p>workqueue 的基本特性如下：</p>
+<ul>
+<li><p>有序：所有的元素按照添加的顺序进行处理</p>
+</li>
+<li><p>标记元素：标记元素是否被处理，在处理时重新排队</p>
+</li>
+<li><p>去重：相同的元素在同一时间不会被并发的处理，一个元素在被多次添加进队列的情况下，也只会被处理一次</p>
+</li>
+<li><p>并发性：支持多个生产者和消费者</p>
+</li>
+<li><p>通知：ShutDown 方法通过信号量通知队列不在接收新的元素，同时通知 metrics goroutine 退出</p>
+</li>
+</ul>
+<p>其他额外的特性：</p>
+<ul>
+<li>延时队列：元素取出后延时一段时间再加入队列</li>
+<li>限速队列：限制元素入队的速率，对元素加入队列的次数进行限制</li>
+<li>监控：支持 promethus 监控</li>
+</ul>
+<p>workerqueue 支持下列三种队列，对外提供三种接口</p>
+<ul>
+<li><code>Interface</code>：FIFO 基础队列，支持去重</li>
+<li><code>DelayingInterface</code>：延迟队列，基于 Interface ，提供额外的 <code>AddAfter(item interface&#123;&#125;, duration time.Duration)</code> 方法, 延迟一段时间后再将元素加入队列</li>
+<li><code>RateLimitingInterface</code>: 限速队列，基于 DelayingInterface， 增加<code>AddRateLimited(item interface&#123;&#125;)</code>, <code>Forget(item interface&#123;&#125;)</code>, <code>NumRequeues(item interface&#123;&#125;) int</code> 方法，对元素进入队列的速率进行限制</li>
+</ul>
+<h2 id="FIFO-队列"><a href="#FIFO-队列" class="headerlink" title="FIFO 队列"></a>FIFO 队列</h2><p>FIFO 是最基本的 workqueue，支持基本的队列操作，接口定义如下</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Interface <span class="hljs-keyword">interface</span> &#123;<br>  <span class="hljs-comment">// Add 向队列中添加元素</span><br>	Add(item <span class="hljs-keyword">interface</span>&#123;&#125;)<br>  <span class="hljs-comment">// 获取队列的长度</span><br>	Len() <span class="hljs-type">int</span><br>  <span class="hljs-comment">// 获取队列头部的元素，当 shutdown 为 true 时，消费者应该关闭 goroutine</span><br>	Get() (item <span class="hljs-keyword">interface</span>&#123;&#125;, shutdown <span class="hljs-type">bool</span>)<br>  <span class="hljs-comment">// 标记元素已被处理</span><br>	Done(item <span class="hljs-keyword">interface</span>&#123;&#125;)<br>  <span class="hljs-comment">// 关闭队列</span><br>	ShutDown()<br>  <span class="hljs-comment">// 停止元素入队，等待所有元素处理完成后，关闭队列</span><br>	ShutDownWithDrain()<br>  <span class="hljs-comment">// 查询队列是否已关闭</span><br>	ShuttingDown() <span class="hljs-type">bool</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>FIFO 队列的结构如下</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Type <span class="hljs-keyword">struct</span> &#123;<br>  <span class="hljs-comment">// queue 按顺序存放了需要处理的元素，</span><br>  <span class="hljs-comment">// queue 中的每个元素都应该在 dirty 中，而不在 processing 中</span><br>	queue []t<br><br>	<span class="hljs-comment">// dirty 存放了所有需要被处理的元素</span><br>	dirty set<br><br>  <span class="hljs-comment">// processing 中的元素表示正在被处理，处理完成后，从其中移除元素</span><br>  <span class="hljs-comment">// 并检查 dirty 中是否有相同的元素，如果有，将元素加入到 queue 中</span><br>	processing set<br><br>	cond *sync.Cond<br><br>	shuttingDown <span class="hljs-type">bool</span><br>	drain        <span class="hljs-type">bool</span><br><br>  metrics queueMetrics<br><br>	unfinishedWorkUpdatePeriod time.Duration<br>	clock                      clock.WithTicker<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>元素入队的过程</p>
+<p><img src="https://image-1304291812.cos.ap-shanghai.myqcloud.com/workqueue-add.png" srcset="/img/loading.gif" lazyload alt="workqueue-add.png"></p>
+<p>使用 <code>Get()</code> 获取元素执行时，如果 queue 为空，则直接返回空指针，以及 shutdown 为 true 的结果。如果队列中不为空，会先从 queue 中获取队头的元素，执行代码如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs go">item := queue[<span class="hljs-number">0</span>]<br>queue[<span class="hljs-number">0</span>] = <span class="hljs-literal">nil</span> <span class="hljs-comment">// 底层的数组仍然持有对象，不会被垃圾回收，所以需要设置为 nil</span><br>queue = queue[<span class="hljs-number">1</span>:]<br><br>q.metrics.get(item)<br><br>q.processing.insert(item)<br>q.dirty.<span class="hljs-built_in">delete</span>(item)<br></code></pre></td></tr></table></figure>
+
+<p>当对元素的处理完成后，调用 <code>Done()</code> 方法来标记元素已被处理，首先从 <code>processing</code> 中删除元素，然后查看 <code>dirty</code> 中是否有相同的元素，如果有就加入到 <code>queue</code> 中。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs go">q.processing.<span class="hljs-built_in">delete</span>(item)<br><span class="hljs-keyword">if</span> q.dirty.has(item) &#123;<br>  q.queue = <span class="hljs-built_in">append</span>(q.queue, item)<br>  q.cond.Signal()<br>&#125; <br></code></pre></td></tr></table></figure>
+
+<p>在并发执行的情况下，只有既不在 processing 也不再 dirty 中的元素会被直接加入到 queue 中被执行，其它情况下只有等待当前的元素执行完成才会被取出，保证了去重。</p>
+<h2 id="延迟队列"><a href="#延迟队列" class="headerlink" title="延迟队列"></a>延迟队列</h2><p>基于 FIFO 队列接口再次封装，增加了 <code>AddAfter</code>方法</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> DelayingInterface <span class="hljs-keyword">interface</span> &#123;<br>	Interface<br>	<span class="hljs-comment">// AddAfter 在指定的 duration 之后将元素加入到队列中</span><br>  <span class="hljs-comment">// 当 duration &lt; 0 时，元素会被直接插入到其中</span><br>	AddAfter(item <span class="hljs-keyword">interface</span>&#123;&#125;, duration time.Duration)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>延迟队列的实现</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> delayingType <span class="hljs-keyword">struct</span> &#123;<br>	Interface<br><br>	<span class="hljs-comment">// clock tracks time for delayed firing</span><br>	clock clock.Clock<br><br>	<span class="hljs-comment">// stopCh 发送信号来停止 waiting loop</span><br>	stopCh <span class="hljs-keyword">chan</span> <span class="hljs-keyword">struct</span>&#123;&#125;<br>	<span class="hljs-comment">// stopOnce 保证只发送一次停止信号</span><br>	stopOnce sync.Once<br><br>	<span class="hljs-comment">// heartbeat ensures we wait no more than maxWait before firing</span><br>  <span class="hljs-comment">// heartbeat 用来保证没有超过最大等待时间</span><br>	heartbeat clock.Ticker<br><br>	<span class="hljs-comment">// waitingForAddCh 是一个缓冲 channel 提供 waitingForAdd 的元素</span><br>	waitingForAddCh <span class="hljs-keyword">chan</span> *waitFor<br><br>	<span class="hljs-comment">// metrics 计算重试的次数</span><br>	metrics retryMetrics<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>waitingForAddCh 的默认初始大小为 1000， 当使用 AddAfter 加入元素后，会被加入到 waitingForAddCh 中。</p>
+<p>waitingForChan 中的元素结构如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> waitFor <span class="hljs-keyword">struct</span> &#123;<br>	data    t<br>	readyAt time.Time<br>	<span class="hljs-comment">// 在 waitForProrityQueue 中的位置</span><br>	index <span class="hljs-type">int</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>所有 waitingForAddCh 中的元素都是通过 waitingLoop 函数进行执行的。当 delayingType 被初始化时，会启动新的 goroutine 来执行 waitingLoop 方法。</p>
+<p>当元素的延迟时间不大于当前时间的时候，即延迟时间还未到，元素插入到 waitForPriorityQueue 中。否则就将元素插入到 FIFO 队列中。</p>
+<p>waitForPriorityQueue 是一个根据延迟时间排序的堆，堆顶的元素是最先就绪的元素，底层结构是一个 waitFor 的 slice</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> waitForPriorityQueue []*waitFor<br></code></pre></td></tr></table></figure>
+
+<p>在遍历的过程中，查看 waitForPriorityQueue 堆顶的元素是是否就绪，如果就绪则 Pop 出堆顶元素，插入的 FIFO 队列中，然后继续查看下一个元素。</p>
+<h2 id="限速队列"><a href="#限速队列" class="headerlink" title="限速队列"></a>限速队列</h2><p>限速队列，基于延迟队列与 FIFO 队列接口封装。新增了  <code>AddRateLimited</code>, <code>Forget</code>, <code>NumRequeues</code> 方法。</p>
+<p>限速队列达通过延迟某个元素的插入时间，达到特定时间段内插入指定数量元素的目标。</p>
+<p>定义如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> RateLimiter <span class="hljs-keyword">interface</span> &#123;<br>	<span class="hljs-comment">// 获取元素应该等待的时间</span><br>	When(item <span class="hljs-keyword">interface</span>&#123;&#125;) time.Duration<br>	<span class="hljs-comment">// 释放元素，清空元素的失败次数</span><br>	Forget(item <span class="hljs-keyword">interface</span>&#123;&#125;)<br>	<span class="hljs-comment">// 返回元素的失败次数</span><br>	NumRequeues(item <span class="hljs-keyword">interface</span>&#123;&#125;) <span class="hljs-type">int</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>限速周期：执行 AddRateLimited 方法到执行完 Forget 方法之间的时间。</p>
+</blockquote>
+<h3 id="限速算法"><a href="#限速算法" class="headerlink" title="限速算法"></a>限速算法</h3><h4 id="令牌桶算法"><a href="#令牌桶算法" class="headerlink" title="令牌桶算法"></a>令牌桶算法</h4><p><img src="https://image-1304291812.cos.ap-shanghai.myqcloud.com/token-bucket.png" srcset="/img/loading.gif" lazyload alt="令牌桶算法"></p>
+<p>workqueue 的令牌桶算法借助 <a target="_blank" rel="noopener" href="https://pkg.go.dev/golang.org/x/time/rate">rate</a> 库实现。</p>
+<p>令牌桶内部是一个存放 token 的 bucket，初始时 bucket 为空，token 以固定的速率往 bucket 中填入。当 bucket 满了的时候，token 会被直接丢弃。</p>
+<p>只有获取到了 token 的元素才会被 accept，没有获取到 token 的元素只能排队等待。令牌桶通过发放 token 的方式达到限制速率。</p>
+<p>workqueue 默认队列为</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">DefaultControllerRateLimiter</span><span class="hljs-params">()</span></span> RateLimiter &#123;<br>	<span class="hljs-keyword">return</span> NewMaxOfRateLimiter(<br>		NewItemExponentialFailureRateLimiter(<span class="hljs-number">5</span>*time.Millisecond, <span class="hljs-number">1000</span>*time.Second),<br>		<span class="hljs-comment">// 每秒填入 10 个令牌，bucket 的容量为 100.</span><br>		&amp;BucketRateLimiter&#123;Limiter: rate.NewLimiter(rate.Limit(<span class="hljs-number">10</span>), <span class="hljs-number">100</span>)&#125;,<br>	)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>在限速周期内插入的元素，通过 <code>r.LimiterReserve().Delay </code> 返回指定元素等待的时间，前 bucket 容量的元素会被立即返回，之后的元素的延迟时间为 100/100 ms， 101/200ms， 102/300ms。每 100ms 放入一个令牌，后续的令牌得在 100 ms 后才能获取到新令牌。</p>
+<h4 id="排队指数算法"><a href="#排队指数算法" class="headerlink" title="排队指数算法"></a>排队指数算法</h4><p>将元素的排队数量作为指数，排队数增大，速率就以 2 的指数形式增长，但最大不超过 maxDelay。</p>
+<p>基础的延迟速率为 baseDelay，如果有十个相同的元素在排队，那么第一个元素的延迟时间为 1* baseDelay， 第二个元素的延迟时间就是 2 * baseDelay，第三个元素的延迟时间就为 4 * baseDelay，第四个元素的延迟时间就为 8 * baseDelay，以此类推，直到超过 maxDelay 后，设置为 maxDelay。</p>
+<h4 id="计数器算法"><a href="#计数器算法" class="headerlink" title="计数器算法"></a>计数器算法</h4><p>在一个计数周期内，最多只允许通过规定数量的元素。</p>
+<p>比如，设定在 1 分钟内只能通过 100 个元素。开始的时候，计数器归零，每通过一个元素，计数器 +1，当达到上限 100 时不允许新的元素通过。当 1 分钟时间到了后，重新开始计时，计数器归零，重新开始计数。</p>
+<p>基于计数器算法，拓展增加 slow 和 fast 功能，当元素排队的数量小于 maxFastAttempts 使用 fastDelay，超过之后使用 fastDelay。</p>
+<h4 id="混合模式"><a href="#混合模式" class="headerlink" title="混合模式"></a>混合模式</h4><p>混合多种算法，在一个队列中有多个算法同时生效。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Go/" class="print-no-link">#Go</a>
+      
+        <a href="/tags/k8s/" class="print-no-link">#k8s</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>workqueue</div>
+      <div>https://blog.zhangliangliang.cc/post/workqueue.html</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Bobby Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年7月11日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/post/setting-up-mysql-replication.html" title="使用 xtrabakup 搭建基于 GTID 的 mysql replication">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">使用 xtrabakup 搭建基于 GTID 的 mysql replication</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/post/when-to-use-generics.html" title="何时在 Go 中使用泛型">
+                        <span class="hidden-mobile">何时在 Go 中使用泛型</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

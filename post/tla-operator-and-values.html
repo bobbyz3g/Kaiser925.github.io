@@ -1,0 +1,781 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Bobby Zhang">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="算子在 TLA+ 中, 算子 (operator) 就是编程语言中的函数。它们接受参数并求值为表达式。 123EXTENDS IntegersMinutesToSeconds(m) &#x3D;&#x3D; m * 60  算子可以接收任意数量的参数. 没有默认值, 重载或者是可选参数. 如果一个算子接收两个参数, 那么就必须传递两个参数. 如果一个算子不接受参数, 那么可以写成没有参数的形式. 在这种情况下, 它就">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TLA+ 算子和值">
+<meta property="og:url" content="https://blog.zhangliangliang.cc/post/tla-operator-and-values.html">
+<meta property="og:site_name" content="bobbyz3g&#39;s blogs.">
+<meta property="og:description" content="算子在 TLA+ 中, 算子 (operator) 就是编程语言中的函数。它们接受参数并求值为表达式。 123EXTENDS IntegersMinutesToSeconds(m) &#x3D;&#x3D; m * 60  算子可以接收任意数量的参数. 没有默认值, 重载或者是可选参数. 如果一个算子接收两个参数, 那么就必须传递两个参数. 如果一个算子不接受参数, 那么可以写成没有参数的形式. 在这种情况下, 它就">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-12-12T13:16:13.000Z">
+<meta property="article:modified_time" content="2025-08-13T09:50:52.915Z">
+<meta property="article:author" content="Bobby Zhang">
+<meta property="article:tag" content="TLA+">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>TLA+ 算子和值 - bobbyz3g&#39;s blogs.</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"blog.zhangliangliang.cc","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>bobbyz3g</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://wallpaper.kaiser925.workers.dev') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="TLA+ 算子和值"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-12-12 21:16" pubdate>
+          2023年12月12日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          2.6k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          9 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">TLA+ 算子和值</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="算子"><a href="#算子" class="headerlink" title="算子"></a>算子</h2><p>在 TLA+ 中, 算子 (operator) 就是编程语言中的函数。它们接受参数并求值为表达式。</p>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs abnf">EXTENDS Integers<br><br>MinutesToSeconds(m) <span class="hljs-operator">=</span><span class="hljs-operator">=</span> m * <span class="hljs-number">60</span><br></code></pre></td></tr></table></figure>
+
+<p>算子可以接收任意数量的参数. 没有默认值, 重载或者是可选参数. 如果一个算子接收两个参数, 那么就必须传递两个参数. 如果一个算子不接受参数, 那么可以写成没有参数的形式. 在这种情况下, 它就像一个常量</p>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs abnf"><span class="hljs-attribute">SecondsPerMinute</span> <span class="hljs-operator">=</span><span class="hljs-operator">=</span> <span class="hljs-number">60</span><br></code></pre></td></tr></table></figure>
+
+<p>算子的右半部分称之为表达式.</p>
+<h2 id="IF-THEN-ELSE"><a href="#IF-THEN-ELSE" class="headerlink" title="IF-THEN-ELSE"></a>IF-THEN-ELSE</h2><p>在 TLA+ 中有三个结构化表达式的关键字, 分别是 <strong>let</strong> 语句, <strong>case</strong> 语句以及条件语句.</p>
+<p>条件语句如下</p>
+<figure class="highlight llvm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs llvm">Abs(<span class="hljs-keyword">x</span>) <span class="hljs-operator">=</span><span class="hljs-operator">=</span> IF <span class="hljs-keyword">x</span> &lt; <span class="hljs-number">0</span> THEN -<span class="hljs-keyword">x</span> ELSE <span class="hljs-keyword">x</span><br></code></pre></td></tr></table></figure>
+
+<p>语句意义和常用编程语言中的三元表达式是相同的.</p>
+<p>表达式总是会等于一个值, 因此 ELSE 是必须存在的.</p>
+<h2 id="值"><a href="#值" class="headerlink" title="值"></a>值</h2><p>TLA+ 是一个起源于数学的语言, 因此其中的值是无类型的. 在实际使用时, 模型检查器可以识别四种基本类型和四种复杂类型.</p>
+<ul>
+<li><p>基本类型: strings, booleans, integers 以及 models value.</p>
+</li>
+<li><p>复杂类型: sets, sequences, structures 以及 functions.</p>
+</li>
+</ul>
+<p>在 TLA+ 中的每种类型都有着各自的算子, 不能被重载, 重写. 例外的算子是 “=” 和 “#”, 表示相等和不相等.</p>
+<p>不同类型的值是不能进行比较的, 对不同类型的值进行比较会返回错误.</p>
+<h2 id="显而易见"><a href="#显而易见" class="headerlink" title="显而易见"></a>显而易见</h2><p><strong>Integers</strong> 和 <strong>strings</strong> 要使用基本的加法运算符，需要 <code>EXTENDS Integers</code>。字符串必须使用 “双引号”，不能使用单引号。除了 = 和 # 之外，字符串没有运算符。实际上，字符串被用作不透明的标识符，类似于某些语言的 :symbol 类型。如果您的系统需要操作字符串，我们可以将其存储在序列中。</p>
+<p>需要注意的是, 在 TLA+ 中没有 <strong>float</strong> 类型。浮点数具有复杂的语义，极难表示。通常情况下，可以将其抽象出来. 但如果您绝对需要浮点数，那么 TLA+ 就是一个错误的工具。</p>
+<h2 id="Booleans"><a href="#Booleans" class="headerlink" title="Booleans"></a>Booleans</h2><p>布尔类型的值是 <code>TRUE</code> 和<code> FALSE</code></p>
+<p>boolean 的算子在 TLA+ 中更像是数学中的符号, 而不是编程语言中的符号。</p>
+<table>
+<thead>
+<tr>
+<th>逻辑</th>
+<th>TLA+ 符号</th>
+<th>数学符号</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>且(and)</td>
+<td>/\</td>
+<td>⋀</td>
+</tr>
+<tr>
+<td>或(or)</td>
+<td>/</td>
+<td>⋁</td>
+</tr>
+<tr>
+<td>非(not)</td>
+<td>~</td>
+<td>¬</td>
+</tr>
+</tbody></table>
+<p>我们可以使用基础算子来构建新的算子, 如异或(xor)</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">Xor</span><span class="hljs-params">(A, B)</span></span> == A = ~B<br></code></pre></td></tr></table></figure>
+
+<p>初次之外, boolean 还有一个算子 <code>=&gt;</code>, 表示蕴含. <code>A =&gt; B</code> 表示 “A 至少和 B 一样为真”。<code>A =&gt; B</code> = FALSE 当 A 为真且 B 为假时为假，否则为真。B 为真或 A 为假（或两者皆假）。这在编程中并不常见，因为它对控制流毫无用处。但它对任何规范工作都极为重要。</p>
+<p>另外, 在 TLA+ 中, 布尔运算还有着 “bullet point notation” . 当有一个表达式像 <code>A /\ (B \/ C) /\ (D \/ (E /\ F))</code> 这样, 就会难以阅读, 因此可以将其改写为:</p>
+<figure class="highlight livescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs livescript">/<span class="hljs-string">\</span> A<br>/<span class="hljs-string">\</span> <span class="hljs-string">\/</span> B<br>   <span class="hljs-string">\/</span> C<br>/<span class="hljs-string">\</span> <span class="hljs-string">\/</span> D<br>   <span class="hljs-string">\/</span> /<span class="hljs-string">\</span> E<br>      /<span class="hljs-string">\</span> F<br></code></pre></td></tr></table></figure>
+
+<p>这样看起来就变得极为清晰了. 在 A 前面有一个额外的 <code>/\</code>, 这不是必须的, 但是它让整个结构看起来更为舒适. 这也是<strong>语言中唯一需要留白的地方</strong>。假设我写的是</p>
+<figure class="highlight livescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs livescript">/<span class="hljs-string">\</span> A<br>/<span class="hljs-string">\</span> <span class="hljs-string">\/</span> B<br>   <span class="hljs-string">\/</span> C<br>/<span class="hljs-string">\</span> <span class="hljs-string">\/</span> D<br>   <span class="hljs-string">\/</span> /<span class="hljs-string">\</span> E<br>/<span class="hljs-string">\</span> F<br></code></pre></td></tr></table></figure>
+
+<p>那么所有的逻辑都将变化了, 现在表达式等于 <code>A /\ (B \/ C) /\ (D \/ E) /\ F</code>.</p>
+<h2 id="Sequences"><a href="#Sequences" class="headerlink" title="Sequences"></a>Sequences</h2><p>sequences 就像其它语言中的 list. 一个 sequence 可以被写成 &lt;&lt;a, b, c&gt;&gt;, 它的值可以是任何类型的(包括 sequence). 和其它大多数语言一样, 我们通过 <code>seq[n]</code> 的语句来获取指定位置的值, 只不过在 TLA+ 中, 列表的索引是从 1, (<code>1..Len(seq)</code> )开始的, 而不是从 0 开始.</p>
+<p>在 TLA+ 中通用也有着 <code>Sequence</code> 模块, 如果使用了<code>EXTENDS Sequences</code>, 并且定义了 <code>S == &lt;&lt;&quot;a&quot;&gt;&gt;</code></p>
+<table>
+<thead>
+<tr>
+<th>表达式</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Append(S, &quot;b&quot;)</code></td>
+<td><code>&lt;&lt;&quot;a&quot;, &quot;b&quot;&gt;&gt;</code></td>
+</tr>
+<tr>
+<td><code>S \o &lt;&lt;&quot;b&quot;, &quot;c&quot;&gt;&gt;</code></td>
+<td><code>&lt;&lt;&quot;a&quot;, &quot;b&quot;, &quot;c&quot;&gt;&gt;</code></td>
+</tr>
+<tr>
+<td><code>Head(S)</code></td>
+<td><code>&quot;a&quot;</code></td>
+</tr>
+<tr>
+<td><code>Tail(&lt;&lt;1, 2, 3&gt;&gt;)</code></td>
+<td><code>&lt;&lt;2, 3&gt;&gt;</code></td>
+</tr>
+<tr>
+<td><code>Len(S)</code></td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td><code>SubSeq(&lt;&lt;1, 3, 5&gt;&gt;, 1, 2)</code></td>
+<td><code>&lt;&lt;1, 3&gt;&gt;</code></td>
+</tr>
+</tbody></table>
+<p>在 TLA+ 中只支持一行 <code>EXTENDS</code>, 如果有多个模块需要导入, 那么就使用逗号分隔开.</p>
+<p>通过 sequences, 我们可以使用 &lt;&lt;hour, minute, second&gt;&gt; 的形式来表达一个 24 小时制的时钟</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs stylus">EXTENDS Integers, Sequences<br><br><span class="hljs-function"><span class="hljs-title">ToSeconds</span><span class="hljs-params">(time)</span></span> == <span class="hljs-selector-tag">time</span><span class="hljs-selector-attr">[1]</span>*<span class="hljs-number">3600</span> + <span class="hljs-selector-tag">time</span><span class="hljs-selector-attr">[2]</span>*<span class="hljs-number">60</span> + <span class="hljs-selector-tag">time</span><span class="hljs-selector-attr">[3]</span><br><span class="hljs-function"><span class="hljs-title">Earlier</span><span class="hljs-params">(t1, t2)</span></span> == <span class="hljs-built_in">ToSeconds</span>(t1) &lt; <span class="hljs-built_in">ToSeconds</span>(t2)<br></code></pre></td></tr></table></figure>
+
+<h2 id="Sets"><a href="#Sets" class="headerlink" title="Sets"></a>Sets</h2><p>一个 set 就是一个无序, 不同值的集合. 可以写成 <code>&#123;1, 2, 3&#125;</code>, 或者 <code>&#123;&lt;&lt;&quot;a&quot;&gt;&gt;, &lt;&lt;&quot;b&quot;, &quot;c&quot;&gt;&gt;&#125;</code>, 一个 set 甚至可以包含其它 set <code>&#123;&#123;1&#125;, &#123;2&#125;, &#123;3&#125;&#125;</code>.</p>
+<p>set 不可以包含不同类型的值, <code>&#123;1, &quot;a&quot;&#125;</code> 是无效的.</p>
+<h3 id="set-算子"><a href="#set-算子" class="headerlink" title="set 算子"></a>set 算子</h3><p>为了检查 x 是 set 中的元素, 我们可以写 <code>x \in set</code>. \in 也可以在其它的一些场景使用, 而不仅做为一个算子. 当然也有反向的算子<code>\notin</code>. <code>set1 \subseteq set2</code> 测试 set1 中的每个元素是否都在 set2 中.</p>
+<p>其它的一些算子</p>
+<ul>
+<li><code>set1 \union set2</code>: 表示 set1 和 set2 的并集</li>
+<li><code>set1 \intersect set2</code>: 表示 set1 和 set2 的交集</li>
+<li><code>set1 \ set</code> : 表示 set1 和 set2 的差集, 即仅存在与 set1 中的元素</li>
+</ul>
+<figure class="highlight dust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs dust"><span class="language-xml">&gt;&gt;&gt; </span><span class="hljs-template-variable">&#123;1, 3&#125;</span><span class="language-xml"> \union </span><span class="hljs-template-variable">&#123;1, 5&#125;</span><span class="language-xml"></span><br><span class="language-xml"></span><br><span class="language-xml"></span><span class="hljs-template-variable">&#123;1, 3, 5&#125;</span><span class="language-xml"></span><br><span class="language-xml"></span><br><span class="language-xml">&gt;&gt;&gt; </span><span class="hljs-template-variable">&#123;1, 3&#125;</span><span class="language-xml"> \intersect </span><span class="hljs-template-variable">&#123;1, 5&#125;</span><span class="language-xml"></span><br><span class="language-xml"></span><br><span class="language-xml"></span><span class="hljs-template-variable">&#123;1&#125;</span><span class="language-xml"></span><br><span class="language-xml"></span><br><span class="language-xml">&gt;&gt;&gt; </span><span class="hljs-template-variable">&#123;1, 3&#125;</span><span class="language-xml"> \ </span><span class="hljs-template-variable">&#123;1, 5&#125;</span><span class="language-xml"></span><br><span class="language-xml"></span><br><span class="language-xml"></span><span class="hljs-template-variable">&#123;3&#125;</span><br></code></pre></td></tr></table></figure>
+
+<p>如果你导入了 FinitesSets 模块,  <code>EXTEND FiniteSets</code>, 那么就可以使用 <code>Cardinality(set)</code>算子来获取 set 中的元素数量.</p>
+<h3 id="Sets-of-Values"><a href="#Sets-of-Values" class="headerlink" title="Sets of Values"></a>Sets of Values</h3><p>假设我们正在写一个 spec, 使用 clock 的值, 并且我们想要一个算子来快速计算并返回相加后的时间. 可能将它写为下面的形式</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">AddTimes</span><span class="hljs-params">(t1, t2)</span></span> == &lt;&lt;t1<span class="hljs-selector-attr">[1]</span> + t2<span class="hljs-selector-attr">[1]</span>, t1<span class="hljs-selector-attr">[2]</span> + t2<span class="hljs-selector-attr">[2]</span>, t1<span class="hljs-selector-attr">[3]</span> + t2<span class="hljs-selector-attr">[3]</span>&gt;&gt;<br></code></pre></td></tr></table></figure>
+
+<p>然后使用 <code>AddTimes(&lt;&lt;2, 0, 1&gt;&gt;, &lt;&lt;1, 2, 3&gt;&gt;) = &lt;&lt;3, 2, 4&gt;&gt;</code>, 和 <code>AddTimes(&lt;&lt;2, 0, 1&gt;&gt;,&lt;&lt;1, 2, 80&gt;&gt;) = &lt;&lt;3, 2, 81&gt;&gt;</code>.</p>
+<p>这时我们发现不对了, 我们的时钟显示了 81 秒, 正确的答案应该是 &lt;&lt;3, 3, 21&gt;&gt;. 一个有效的时钟值集合应该是从 &lt;&lt;0, 0, 0&gt;&gt; 到 &lt;&lt;23, 23, 59&gt;&gt; 的, 并且 AddTime 返回的结果也是其中的值. </p>
+<p>我们可以在 TLA+ 中强制这样, 但是首先我们需要一种从数值生成数值集的方法. 幸运的是, TLA+ 中的每种类型的值都是可以生成值的集合的.</p>
+<p>首先从最简单的 boolean 类型的值开始, 需要获取所有布尔类型的值的集合, 直接写 <code>BOOLEAN</code> , 它代表 {TRUE, FALSE}. 对 Intergers 的来说, <code>a..b</code> 是集合 {a, a+1, a+2, …, b}. 需要 <code>EXTENDSIntegers</code> 来使它生效.</p>
+<p>接下来是 Sequence, 两个集合 S 和 T 的笛卡儿乘积是所有序列的集合，其中第一个元素在 S 中，第二个元素在 T 中。例如，LoginAttempt 包含登录者、尝试登录的时间以及登录是否成功。我可以将所有可能值的集合表示为 <code>LoginAttempt == Person \X Time \X BOOLEAN</code>.</p>
+<p>\X 不是相关联的.</p>
+<figure class="highlight livescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs livescript">S == <span class="hljs-number">1.</span>.<span class="hljs-number">3</span><br><br>&gt;&gt; &lt;&lt;<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>&gt;&gt; <span class="hljs-string">\in</span> S <span class="hljs-string">\X</span> S <span class="hljs-string">\X</span> S<br>TRUE<br><br>&gt;&gt; &lt;&lt;<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>&gt;&gt; <span class="hljs-string">\in</span> (S <span class="hljs-string">\X</span> S) <span class="hljs-string">\X</span> S<br>FALSE<br><br>&gt;&gt; &lt;&lt;&lt;&lt;<span class="hljs-number">1</span>, <span class="hljs-number">2</span>&gt;&gt;, <span class="hljs-number">3</span>&gt;&gt; <span class="hljs-string">\in</span> (S <span class="hljs-string">\X</span> S) <span class="hljs-string">\X</span> S<br>TRUE<br></code></pre></td></tr></table></figure>
+
+<p>对于时钟类型来说, 我们可以使用 <code>\X</code> 和 <code>..</code> 来得到我们需要的类型.</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">ClockType</span> == (<span class="hljs-number">0</span>..<span class="hljs-number">23</span>) \X (<span class="hljs-number">0</span>..<span class="hljs-number">59</span>) \X (<span class="hljs-number">0</span>..<span class="hljs-number">59</span>)<br></code></pre></td></tr></table></figure>
+
+<p>你会发现它有 86400 个元素。现在我们离 AddTimes 的属性又近了一步：我们希望 AddTimes 的结果总是返回 ClockType 的值。</p>
+<h3 id="Map-Filter"><a href="#Map-Filter" class="headerlink" title="Map Filter"></a>Map Filter</h3><p>Set 可以被 map 以及 filter</p>
+<figure class="highlight livescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs livescript"><span class="hljs-string">\*</span> <span class="hljs-built_in">Map</span><br>Squares == &#123;x*x: x <span class="hljs-string">\in</span> <span class="hljs-number">1.</span>.<span class="hljs-number">4</span>&#125;<br><br><span class="hljs-string">\*</span> Filter<br>Evens == &#123;x <span class="hljs-string">\in</span> <span class="hljs-number">1.</span>.<span class="hljs-number">4</span>: x % <span class="hljs-number">2</span> = <span class="hljs-number">0</span> &#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="CHOOSE"><a href="#CHOOSE" class="headerlink" title="CHOOSE"></a>CHOOSE</h3><p>从时钟值中获取午夜过后的秒数非常简单。但反过来呢？如果我们有一个以秒为单位的时间，我们可以通过以下方法得到时钟时间</p>
+<ol>
+<li><p>Floor 除以 3600，得到总小时数。</p>
+</li>
+<li><p>再用余数除以 60，得到总的分钟数。</p>
+</li>
+<li><p>将第二次除法的余数作为秒。</p>
+</li>
+</ol>
+<p>这样就能从总秒数中构建出时钟值。这就是我们在编程语言中实现算法的方法。但这也容易出错。如果我输入 90,000 会怎样？这样就会得到 &lt;&lt;25, 0, 0&gt;&gt; - 一个不属于 ClockType 的值。</p>
+<p>我们还可以这样做：</p>
+<ol>
+<li><p>获取所有可能的时钟值集合。</p>
+</li>
+<li><p>在集合中选择一个元素，将其转换为秒后，我们就得到了这个值。</p>
+</li>
+</ol>
+<p>我们不会这样做，因为 “所有可能的时钟值集合 “长度超过 80,000 个元素，在 80,000 个元素的列表中进行查找会浪费资源。但这样做更符合转换的定义，使其对规范更有用。在 TLA+ 中，我们可以这样编写选择：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">ToClock</span><span class="hljs-params">(seconds)</span></span> == CHOOSE x \<span class="hljs-keyword">in</span> ClockType: <span class="hljs-built_in">ToSeconds</span>(x) = seconds<br></code></pre></td></tr></table></figure>
+
+<p><code>CHOOSE x \in set: P(x)</code> 是通用的 “选择 “语法.</p>
+<p>当我们需要从一个集合中提取一个值时，CHOOSE 就会派上用场。</p>
+<p>如果我们写 ToClock(86401) 会怎样？没有任何时钟时间有 86,401 秒。如果尝试这样做，TLC 将引发错误。这与实现方案截然不同，后者会给出一个无意义的值。99% 的情况下，如果找不到对应的集合元素，那就是规范中的错误，是你没有考虑到的边缘情况。最好是强化算子:</p>
+<figure class="highlight excel"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs excel">ToClock(seconds) == <span class="hljs-built_in">CHOOSE</span> x \i<span class="hljs-built_in">n</span> ClockTy<span class="hljs-symbol">pe:</span> ToSeconds(x) = seconds % <span class="hljs-number">86400</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="LET"><a href="#LET" class="headerlink" title="LET"></a>LET</h3><p>现在, 你可以想象到 TLA+ 的算子可以非常负责. 为了简化他们, 我们可以通过 LET 来将他们划分为不同的子算子</p>
+<figure class="highlight excel"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs excel">ToClock(seconds) ==<br>  LET seconds_per_day == <span class="hljs-number">86400</span><br>  IN <span class="hljs-built_in">CHOOSE</span> x \i<span class="hljs-built_in">n</span> ClockTy<span class="hljs-symbol">pe:</span> ToSeconds(x) = seconds % seconds_per_day<br></code></pre></td></tr></table></figure>
+
+<p>LET 给我们提供了一个新定义，本地作用域为 ToClock。seconds_per_day 是一个操作符，只存在于这个定义中。</p>
+<p>我们也可以在 LET 中添加参数化操作符！</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">ThreeMax</span><span class="hljs-params">(a, b, c)</span></span> ==<br>   LET<br>     <span class="hljs-built_in">Max</span>(x, y) == IF x &gt; y THEN x ELSE y<br>   IN<br>     <span class="hljs-built_in">Max</span>(<span class="hljs-built_in">Max</span>(<span class="hljs-selector-tag">a</span>, b), c)<br></code></pre></td></tr></table></figure>
+
+<p>你可以定义多个算子在一个 LET 中:</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">ThreeMax</span><span class="hljs-params">(a, b, c)</span></span> ==<br>   LET<br>     <span class="hljs-built_in">Max</span>(x, y) == IF x &gt; y THEN x ELSE y<br>     maxab == <span class="hljs-built_in">Max</span>(<span class="hljs-selector-tag">a</span>, b)<br>   IN<br>     <span class="hljs-built_in">Max</span>(maxab, c)<br></code></pre></td></tr></table></figure>
+
+<p>LET 中的每个运算符都可以引用该范围内先前定义的运算符。这样，我们就可以逐步构建解决方案。</p>
+<figure class="highlight livecodeserver"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs livecodeserver">ToClock2(<span class="hljs-built_in">seconds</span>) ==<br>  LET<br>    h == <span class="hljs-built_in">seconds</span> \<span class="hljs-keyword">div</span> <span class="hljs-number">3600</span><br>    h_left == <span class="hljs-built_in">seconds</span> % <span class="hljs-number">3600</span><br>    m == h_left \<span class="hljs-keyword">div</span> <span class="hljs-number">60</span><br>    m_left == h_left % <span class="hljs-number">60</span><br>    s == m_left<br>  IN<br>    &lt;&lt;h, m, s&gt;&gt;<br></code></pre></td></tr></table></figure>
+
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/TLA/" class="print-no-link">#TLA+</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>TLA+ 算子和值</div>
+      <div>https://blog.zhangliangliang.cc/post/tla-operator-and-values.html</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Bobby Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年12月12日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/post/finding-unreachable-functions-with-deadcode.html" title="Go 使用 deadcode 查找无法访问的函数">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Go 使用 deadcode 查找无法访问的函数</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/post/limit-param-range-in-go.html" title="Go 限制函数参数">
+                        <span class="hidden-mobile">Go 限制函数参数</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,712 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Bobby Zhang">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="事务用来保证一组数据库操作，要么一起成功，要么一起失败。不存在一部分操作成功，另一部分操作失败的情况。 最常见的例子就是银行的转账。当小明需要给小红转 100 元时，首先需要检查小明的账户是否有足够的余额，然后将小红的余额增加 100，更新小明的余额。在这个例子中，整个操作必须同时成功或者失败，不能出现小红的余额增加了 100，小明的余额却没有减少 100 的情况。 MySQL 的事务支持是在引擎">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL 事务隔离">
+<meta property="og:url" content="https://blog.zhangliangliang.cc/post/mysql-transaction-isolation.html">
+<meta property="og:site_name" content="bobbyz3g&#39;s blogs.">
+<meta property="og:description" content="事务用来保证一组数据库操作，要么一起成功，要么一起失败。不存在一部分操作成功，另一部分操作失败的情况。 最常见的例子就是银行的转账。当小明需要给小红转 100 元时，首先需要检查小明的账户是否有足够的余额，然后将小红的余额增加 100，更新小明的余额。在这个例子中，整个操作必须同时成功或者失败，不能出现小红的余额增加了 100，小明的余额却没有减少 100 的情况。 MySQL 的事务支持是在引擎">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-12-28T14:32:24.000Z">
+<meta property="article:modified_time" content="2025-08-13T09:50:52.913Z">
+<meta property="article:author" content="Bobby Zhang">
+<meta property="article:tag" content="MySQL">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>MySQL 事务隔离 - bobbyz3g&#39;s blogs.</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"blog.zhangliangliang.cc","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>bobbyz3g</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://wallpaper.kaiser925.workers.dev') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="MySQL 事务隔离"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-12-28 22:32" pubdate>
+          2023年12月28日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          2.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          8 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">MySQL 事务隔离</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>事务用来保证一组数据库操作，要么一起成功，要么一起失败。不存在一部分操作成功，另一部分操作失败的情况。</p>
+<p>最常见的例子就是银行的转账。当小明需要给小红转 100 元时，首先需要检查小明的账户是否有足够的余额，然后将小红的余额增加 100，更新小明的余额。在这个例子中，整个操作必须同时成功或者失败，不能出现小红的余额增加了 100，小明的余额却没有减少 100 的情况。</p>
+<p>MySQL 的事务支持是在引擎层实现的。MySQL 支持多引擎，可以根据需要选择不同的引擎，但是 MySQL 原生的引擎 MyISAM 是不支持事务操作的，因此在之后被 Innodb 所替代了。</p>
+<p>在 MySQL 谈到事务相关的概念时，没有特殊说明的情况下，我们都是在以 InnoDB 引擎为例，这也是新版本 MySQL 的默认引擎。</p>
+<h2 id="隔离性与隔离级别"><a href="#隔离性与隔离级别" class="headerlink" title="隔离性与隔离级别"></a>隔离性与隔离级别</h2><h3 id="ACID"><a href="#ACID" class="headerlink" title="ACID"></a>ACID</h3><p>事务具有四个特性，分别是原子性(Atomicity )，一致性(Consistency)，隔离性(Isolation)以及持久性(Durability)</p>
+<ul>
+<li><strong>原子性（Atomicity）</strong>：在 MySQL 中，事务被视为单一的不可分割的单位，所有操作要么全做，要么全不做。MySQL 使用回滚（ROLLBACK）操作保证事务的原子性，在事务执行过程中如果发生错误，所做的全部更改将被撤销，数据库将返回到事务开始时的状态。</li>
+<li><strong>一致性（Consistency）</strong>：在 MySQL 中，一致性意味着只有合法的数据能被写入数据库，否则，事务应当会被回滚。例如，定义了数据的整合性约束（如外键约束），在更新操作中不满足约束的数据将不被写入。</li>
+<li><strong>隔离性（Isolation）</strong>：在 MySQL 中，多个事务可以并发执行，但每个事务都被视为在一个独立的“沙箱”中进行，保障了事务间不互相干扰。</li>
+<li><strong>持久性（Durability）</strong>：在 MySQL 中，一旦事务完成（即，被提交了），对数据库的更改就是永久性的，下次数据库启动时，数据仍然存在，这就是持久性。这是通过将事务记录在磁盘上的重做日志（Redo Log）中实现的。即使在系统出现故障的情况下也可以通过重做操作（Redo）恢复数据</li>
+</ul>
+<p>由于事务执行是互不干扰的，因此在多个事务执行时，可能会出现下面的三种读取异常：</p>
+<ul>
+<li><strong>脏读（Dirty Read）</strong>：一个事务读取了其他事务未提交的修改。如果这些修改最后被回滚（即未被提交），那么读取这些数据的事务就会得到错误的数据。脏读可能导致数据不一致的问题。</li>
+<li><strong>不可重复读（Non-Repeatable Read）</strong>：在同一事务中，某个数据被多次读取，但每次得到的结果都不同。这通常是因为在两次读操作之间，另一个具有写权限的事务更改或删除了这个数据并进行了提交，导致同一事务的两次读取返回的结果不一致。这种现象称为不可重复读。</li>
+<li><strong>幻读（Phantom Read）</strong>：在同一事务中，执行完相同的查询操作，第一次和后续的查询结果不一致，即后续的查询操作多了一些行或者少了一些行。这通常发生在另一个并发事务在两次查询期间插入或删除了一些行造成的。这种现象称为幻读。</li>
+</ul>
+<p>为了解决上面的这些问题，我们需要设置数据库的事务隔离级别。SQL 标准定义了四种隔离级别，从低到高分别为：</p>
+<ul>
+<li><p>**读未提交 (Read Uncommitted)**：一个事务还没提交时，它做的变更就能被别的事务看到</p>
+</li>
+<li><p>**读已提交 (Read Committed)**：一个事务提交之后，它做的变更才会被其他事务看到</p>
+</li>
+<li><p><strong>可重复读 (Repeatable Read)</strong> ：一个事务执行过程中看到的数据，总是跟这个事务在启动时看到的数据是一致的。在可重复读隔离级别下，未提交变更对其他事务也是不可见的</p>
+</li>
+<li><p>**串行化 (Serializable)**：对于同一行记录，“写”会加“写锁”，“读”会加“读锁”。当出现读写锁冲突的时候，后访问的事务必须等前一个事务执行完成，才能继续执行</p>
+</li>
+</ul>
+<p>这四个级别能够逐级避免脏读、不可重复读、幻读三种现象，但隔离级别越高，并发性能越低。在实际开发中需要根据业务需求来选择合适的隔离级别。</p>
+<p>在 MySQL 的 InnoDB 存储引擎中，默认的隔离级别是 “可重复读”，这个级别下，能有效的防止脏读和不可重复读，但无法防止幻读。要避免幻读需要将隔离级别设置为 “串行化”。</p>
+<p>在这四个等级中，读已提交与可重复读容易让人弄混。我们借助一个例子来说明它们的区别。</p>
+<p>首先我们创建一张用于测试表</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> T(var <span class="hljs-type">int</span>);<br><span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> T(var) <span class="hljs-keyword">VALUE</span> (<span class="hljs-number">1</span>);<br></code></pre></td></tr></table></figure>
+
+<p>然后我们按照时间顺序启动两个事务</p>
+<table>
+<thead>
+<tr>
+<th>事务 A</th>
+<th>事务 B</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>启动事务， 查询得到 1</td>
+<td>启动事务</td>
+</tr>
+<tr>
+<td></td>
+<td>查询得到值 1</td>
+</tr>
+<tr>
+<td></td>
+<td>将 1 改为 2</td>
+</tr>
+<tr>
+<td>查询得到值 V1</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>提交事务 B</td>
+</tr>
+<tr>
+<td>查询得到值 V2</td>
+<td></td>
+</tr>
+<tr>
+<td>提交事务 B</td>
+<td></td>
+</tr>
+<tr>
+<td>查询得到值 V3</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>在不同的隔离级别下，事务 A 查询到的值 V1，V2， V3 是不同的</p>
+<ul>
+<li>读未提交：V1，V2，V3 的值都是 2，此时虽然 B 还没有提交，但是 A 已经能看到 B 修改的值了</li>
+<li>读提交：V1 = 1，V2 = 2，V3=2，事务 B 只有完成提交，才能被 A 看到</li>
+<li>可重复读：V1=1， V2=1，V3=2，V2 还是 1 的原因是因为事务在执行期间看到的数据前后必须是一致的</li>
+<li>串行化：B 在更新 数据时会被锁住，直到 A 的事务提交后 B 才可以继续执行。因此 V1=1， V2=1，V3=2</li>
+</ul>
+<h2 id="事务隔离的实现"><a href="#事务隔离的实现" class="headerlink" title="事务隔离的实现"></a>事务隔离的实现</h2><p>在事务的实现上，数据库会创建一个数据的视图，在访问数据时以视图里的逻辑结果为准。</p>
+<p>在可重复读的级别下，这个视图是在事务开始时创建，在整个事务期间都是使用这个视图。在读提交的隔离级别下，这个视图时是在每个 SQL 执行时创建的。在读未提交的级别下，会直接返回最新的数据记录，而没有视图的存在。在串行化的级别下，则是通过直接加锁来避免并发访问。</p>
+<p>在 MySQL 中，每条记录在更新时都会记录一条回滚记录。记录上的最新值，通过回滚操作可以返回到上一个状态的值。</p>
+<p>假设一个值 1 按顺序被改成了 2，3，4，那么就会在数据库中形成一条类似下面的记录：</p>
+<figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs tap"><br><br>       view C          view B                           view C<br>         │               │                                 │<br>         │               │                                 │<br>         │               │                                 │<br>┌────────┴───────────────┴─────────────────────────┐       │<br>│        ▼               ▼                         │       │<br>│  ┌──────────┐     ┌──────────┐     ┌──────────┐  │  ┌────▼─────┐<br>│  │          │     │          │     │          │  │  │          │<br>│  │ <span class="hljs-number"> 2 </span>-&gt;<span class="hljs-number"> 1 </span> │◄────┤ <span class="hljs-number"> 3 </span>-&gt;<span class="hljs-number"> 2 </span> │◄────┤ <span class="hljs-number"> 4 </span>-&gt;<span class="hljs-number"> 3 </span> │◄─┼──┤  cur-&gt;4  │<br>│  │          │     │          │     │          │  │  │          │<br>│  └──────────┘     └──────────┘     └──────────┘  │  └──────────┘<br>│                                                  │<br>│                                                  │<br>│                 rollback segment                 │<br>│                                                  │<br>│                                                  │<br>└──────────────────────────────────────────────────┘<br></code></pre></td></tr></table></figure>
+
+<p>当前值是 4，但是在查询这条记录的时候，不同时刻启动的事务会有不同的视图。就像图中看到的，在视图 A、B、C 里面，这一个记录的值分别是 1、2、4，同一条记录在系统中可以存在多个版本，就是数据库的多版本并发控制（MVCC）。对于 read-view A，要得到 1，就必须将当前值依次执行图中所有的回滚操作得到，也就是执行 4 -&gt;3,  3-&gt;2,  2-&gt;1。</p>
+<p>如果此时有另一个事务将 4 改成了 5，那么与当前的视图也不会产生冲突，只是会产生一个新的回滚记录。</p>
+<p>回滚日志在系统判断没有事务使用时被删除。没有事务使用的判断依据是没有比回滚日志更早的事务存在了。</p>
+<p>由于这个特性，如果我们在数据操作时开启了长事务，那么数据库中就会存在很老的事务视图。由于这个事务可能随时访问数据，因此数据库必须为它保留回滚日志，这就导致了大量的存储空间被占用。除此之外，长事务还会导致长时间的锁占用，从而拖累整个数据库。</p>
+<h2 id="事务的启动方式"><a href="#事务的启动方式" class="headerlink" title="事务的启动方式"></a>事务的启动方式</h2><p>在 MySQL 数据库中，事务有以下的两种启动方式：</p>
+<ol>
+<li>使用 begin 或者 start transaction 来显示的启动事务，提交使用 commit，回滚则使用 rollback；</li>
+<li>通过 <code>set autocommit=0</code> 命令关闭线程的自动提交。在这种情况下，如果你只执行一个 select 语句，这个事务就启动了，而且并不会自动提交。这个事务持续存在直到你主动执行 commit 或 rollback 语句，或者断开连接。</li>
+</ol>
+<p>第二种启动方式处理不当就会导致长事务。因此最好使用 <code>set autocommit=1</code> 开启自动提交，并在需要使用事务时显示的开启事务。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/MySQL/" class="print-no-link">#MySQL</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>MySQL 事务隔离</div>
+      <div>https://blog.zhangliangliang.cc/post/mysql-transaction-isolation.html</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Bobby Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年12月28日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/post/build-own-gemini-chat.html" title="搭建一个 Gemini 聊天网页">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">搭建一个 Gemini 聊天网页</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/post/go-errors-are-value.html" title="Go 错误是值">
+                        <span class="hidden-mobile">Go 错误是值</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

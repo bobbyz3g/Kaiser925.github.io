@@ -1,0 +1,726 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Bobby Zhang">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="本文是翻译自 Go 官方的博客 Go Slices: usage and internals 介绍Go 的切片类型提供了一种方便高效的方法来处理类型化数据序列。切片类似于其他语言中的数组，但具有一些不寻常的属性。本文将介绍什么是切片以及它们的使用方式 数组切片类型是建立在 Go 的数组类型之上的抽象类型，因此要理解切片，我们必须首先了解数组。 数组类型定义指定长度和元素类型。例如，该类型 [4]i">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Go 切片的使用和内部实现">
+<meta property="og:url" content="https://blog.zhangliangliang.cc/post/go-slice-usage-and-internal.html">
+<meta property="og:site_name" content="bobbyz3g&#39;s blogs.">
+<meta property="og:description" content="本文是翻译自 Go 官方的博客 Go Slices: usage and internals 介绍Go 的切片类型提供了一种方便高效的方法来处理类型化数据序列。切片类似于其他语言中的数组，但具有一些不寻常的属性。本文将介绍什么是切片以及它们的使用方式 数组切片类型是建立在 Go 的数组类型之上的抽象类型，因此要理解切片，我们必须首先了解数组。 数组类型定义指定长度和元素类型。例如，该类型 [4]i">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://go.dev/blog/slices-intro/slice-array.png">
+<meta property="og:image" content="https://go.dev/blog/slices-intro/slice-2.png">
+<meta property="og:image" content="https://go.dev/blog/slices-intro/slice-3.png">
+<meta property="article:published_time" content="2024-02-27T13:54:05.000Z">
+<meta property="article:modified_time" content="2025-08-13T09:50:52.912Z">
+<meta property="article:author" content="Bobby Zhang">
+<meta property="article:tag" content="Go">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://go.dev/blog/slices-intro/slice-array.png">
+  
+  
+  
+  <title>Go 切片的使用和内部实现 - bobbyz3g&#39;s blogs.</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"blog.zhangliangliang.cc","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>bobbyz3g</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://wallpaper.kaiser925.workers.dev') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Go 切片的使用和内部实现"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-02-27 21:54" pubdate>
+          2024年2月27日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          2.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          9 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Go 切片的使用和内部实现</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>本文是翻译自 Go 官方的博客 <a target="_blank" rel="noopener" href="https://go.dev/blog/slices-intro#">Go Slices: usage and internals</a></p>
+<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>Go 的切片类型提供了一种方便高效的方法来处理类型化数据序列。切片类似于其他语言中的数组，但具有一些不寻常的属性。本文将介绍什么是切片以及它们的使用方式</p>
+<h2 id="数组"><a href="#数组" class="headerlink" title="数组"></a>数组</h2><p>切片类型是建立在 Go 的数组类型之上的抽象类型，因此要理解切片，我们必须首先了解数组。</p>
+<p>数组类型定义指定长度和元素类型。例如，该类型 <code>[4]int</code> 表示一个由四个整数组成的数组。数组的大小是固定的; 它的长度是其类型的一部分（ <code>[4]int</code> 和 <code>[5]int</code> 是两个不同的、不兼容的类型）。数组可以按通常的方式进行索引，因此表达式 <code>s[n]</code> 从零开始访问第 n 个元素。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">var</span> a [<span class="hljs-number">4</span>]<span class="hljs-type">int</span><br>a[<span class="hljs-number">0</span>] = <span class="hljs-number">1</span><br>i := a[<span class="hljs-number">0</span>]<br><span class="hljs-comment">// i == 1</span><br></code></pre></td></tr></table></figure>
+
+<p>数组不需要显式初始化; 数组的零值是一个现成的, 可以直接使用的数组，其中元素的值为元素类型本身的零值</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// a[2] == 0, int 类型的零值</span><br></code></pre></td></tr></table></figure>
+
+<p><code>[4]int</code> 在内存中的表现形式为, 按照顺序排列的四个 int 值</p>
+<p><img src="https://go.dev/blog/slices-intro/slice-array.png" srcset="/img/loading.gif" lazyload></p>
+<p>Go 语言中的数组是值类型。这意味着数组变量本身代表整个数组，而不是指向数组第一个元素的指针 (就像 C 语言中的数组一样)。因此，当你赋值或传递数组的值时，会复制它的所有内容。(如果你想避免复制，可以传递数组的指针，但这样一来你传递的不是数组本身，而是指向数组的指针。) 我们也可以将数组理解为一种特殊的结构体，只不过它的成员不是通过名称访问，而是通过索引访问。它本质上是一个固定大小的复合值。</p>
+<p>数组字面量可以使用以下方式指定：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go">b := [<span class="hljs-number">2</span>]<span class="hljs-type">string</span>&#123;<span class="hljs-string">&quot;Penn&quot;</span>, <span class="hljs-string">&quot;Teller&quot;</span>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>或者, 你可以让编译器为你计算数组元素的数量:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go">b := [...]<span class="hljs-type">string</span>&#123;<span class="hljs-string">&quot;Penn&quot;</span>, <span class="hljs-string">&quot;Teller&quot;</span>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>在上面两个例子中, b 的类型都是 <code>[2]string</code></p>
+<p>Go 语言中的数组是值类型。这意味着数组变量本身代表整个数组，而不是指向数组第一个元素的指针 (就像 C 语言中的数组一样)。因此，当你赋值或传递数组的值时，会复制它的所有内容。(如果你想避免复制，可以传递数组的指针，但这样一来你传递的不是数组本身，而是指向数组的指针。) 我们也可以将数组理解为一种特殊的结构体，只不过它的成员不是通过名称访问，而是通过索引访问。它本质上是一个固定大小的复合值。</p>
+<p>数组字面量可以使用以下方式指定：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go">b := [<span class="hljs-number">2</span>]<span class="hljs-type">string</span>&#123;<span class="hljs-string">&quot;Penn&quot;</span>, <span class="hljs-string">&quot;Teller&quot;</span>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>或者, 你可以让编译器为你计算数组元素的数量:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go">b := [...]<span class="hljs-type">string</span>&#123;<span class="hljs-string">&quot;Penn&quot;</span>, <span class="hljs-string">&quot;Teller&quot;</span>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>在上面两个例子中, b 的类型都是 [2]string</p>
+<h2 id="切片"><a href="#切片" class="headerlink" title="切片"></a>切片</h2><p>数组在 Go 语言中占有一席之地，但它们有点缺乏灵活性，因此在 Go 代码中并不常见。而切片则无处不在，它们以数组为基础，提供了强大的功能和便利性。</p>
+<p>切片的类型指定为 <code>[]T</code>，其中 <code>T</code> 表示切片元素的类型。与数组类型不同，切片类型没有指定长度。</p>
+<p>声明切片字面量的方式与声明数组字面量的方式类似，只是省略了元素个数的指定</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go">letters := []<span class="hljs-type">string</span>&#123;<span class="hljs-string">&quot;a&quot;</span>, <span class="hljs-string">&quot;b&quot;</span>, <span class="hljs-string">&quot;c&quot;</span>, <span class="hljs-string">&quot;d&quot;</span>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>切片可以通过调用内置的 make 函数来创建, 函数签名是</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">make</span><span class="hljs-params">([]T, <span class="hljs-built_in">len</span>, <span class="hljs-built_in">cap</span>)</span></span> []T<br></code></pre></td></tr></table></figure>
+
+<p>T 表示被创建切片的元素类型.</p>
+<p>函数 <code>make</code> 接受类型、长度和可选容量。调用时，<code>make</code> 会分配一个数组并返回指向该数组的切片</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">var</span> s []<span class="hljs-type">byte</span><br>s = <span class="hljs-built_in">make</span>([]<span class="hljs-type">byte</span>, <span class="hljs-number">5</span>, <span class="hljs-number">5</span>)<br><span class="hljs-comment">// s == []byte&#123;0, 0, 0, 0, 0&#125;</span><br></code></pre></td></tr></table></figure>
+
+<p>如果省略 capacity 参数，则默认为指定的长度。下面是相同代码的更简洁版本</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go">s := <span class="hljs-built_in">make</span>([]<span class="hljs-type">byte</span>, <span class="hljs-number">5</span>)<br></code></pre></td></tr></table></figure>
+
+<p>可以使用内置的 <code>len</code> 和 <code>cap</code> 函数检查切片的长度和容量</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-built_in">len</span>(s) == <span class="hljs-number">5</span><br><span class="hljs-built_in">cap</span>(s) == <span class="hljs-number">5</span><br></code></pre></td></tr></table></figure>
+
+<p>接下来两节, 我们将讨论长度和容量之间的关系。</p>
+<p>空切片的零值为 nil。len 和 cap 函数对空切片都将返回 0。</p>
+<p>还可以通过“切片”现有切片或数组来形成切片。切片通过指定一个由冒号分隔的两个索引的左闭右开区间来完成。例如，表达式 b[1:4] 创建了一个包含 b 中 1 到 3 的元素的切片（结果切片的索引将是 0 到 2）</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs go">b := []<span class="hljs-type">byte</span>&#123;<span class="hljs-string">&#x27;g&#x27;</span>, <span class="hljs-string">&#x27;o&#x27;</span>, <span class="hljs-string">&#x27;l&#x27;</span>, <span class="hljs-string">&#x27;a&#x27;</span>, <span class="hljs-string">&#x27;n&#x27;</span>, <span class="hljs-string">&#x27;g&#x27;</span>&#125;<br><span class="hljs-comment">// b[1:4] == []byte&#123;&#x27;o&#x27;, &#x27;l&#x27;, &#x27;a&#x27;&#125;, 和 b 共享低层存储</span><br></code></pre></td></tr></table></figure>
+
+<p>这也是在给定数组的情况下创建切片的语法:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs go">x := [<span class="hljs-number">3</span>]<span class="hljs-type">string</span>&#123;<span class="hljs-string">&quot;Лайка&quot;</span>, <span class="hljs-string">&quot;Белка&quot;</span>, <span class="hljs-string">&quot;Стрелка&quot;</span>&#125;<br>s := x[:] <span class="hljs-comment">// 一个指向 x 的存储空间的切片</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="切片内部"><a href="#切片内部" class="headerlink" title="切片内部"></a>切片内部</h2><p>切片是数组段的描述符. 它由指向数组的指针, 段的长度和容量(段的最大长度) 组成.</p>
+<p>!<a target="_blank" rel="noopener" href="https://go.dev/blog/slices-intro/slice-struct.png">https://go.dev/blog/slices-intro/slice-struct.png</a></p>
+<p>我们通过 make([]byte, 5) 创建的变量 s, 它的结构像下面这样:</p>
+<p>!<a target="_blank" rel="noopener" href="https://go.dev/blog/slices-intro/slice-1.png">https://go.dev/blog/slices-intro/slice-1.png</a></p>
+<p>长度是切片引用的元素数。容量是基础数组中的元素数（从切片指针引用的元素开始）。长度和容量之间的区别将在我们接下来的几个示例中明确。</p>
+<p>当我们对 s 做切片操作时, 观察切片数据结构的变化以及和低层数组的关系</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go">s = s[<span class="hljs-number">2</span>:<span class="hljs-number">4</span>]<br></code></pre></td></tr></table></figure>
+
+<p><img src="https://go.dev/blog/slices-intro/slice-2.png" srcset="/img/loading.gif" lazyload></p>
+<p>切片操作不会拷贝原有切片的数据. 它会创建一个指向原始数组的新切片值。这使得切片操作与操作数组索引一样高效。因此，修改重新切片的元素（而不是切片本身）会修改原始切片的元素：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs go">d := []<span class="hljs-type">byte</span>&#123;<span class="hljs-string">&#x27;r&#x27;</span>, <span class="hljs-string">&#x27;o&#x27;</span>, <span class="hljs-string">&#x27;a&#x27;</span>, <span class="hljs-string">&#x27;d&#x27;</span>&#125;<br>e := d[<span class="hljs-number">2</span>:]<br><span class="hljs-comment">// e == []byte&#123;&#x27;a&#x27;, &#x27;d&#x27;&#125;</span><br>e[<span class="hljs-number">1</span>] = <span class="hljs-string">&#x27;m&#x27;</span><br><span class="hljs-comment">// e == []byte&#123;&#x27;a&#x27;, &#x27;m&#x27;&#125;</span><br><span class="hljs-comment">// d == []byte&#123;&#x27;r&#x27;, &#x27;o&#x27;, &#x27;a&#x27;, &#x27;m&#x27;&#125;</span><br></code></pre></td></tr></table></figure>
+
+<p>早些时候， <code>s</code> 我们切成比其容量短的长度。我们可以通过再次切片来增加它的容量：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go">s = s[:<span class="hljs-built_in">cap</span>(s)]<br></code></pre></td></tr></table></figure>
+
+<p><img src="https://go.dev/blog/slices-intro/slice-3.png" srcset="/img/loading.gif" lazyload></p>
+<p>切片无法超出其容量进行扩容。尝试这样做会引发运行时错误，就像访问超出切片或数组边界时的错误一样。 类似地，切片也不能向下重新切片到负索引来访问数组中更早的元素。</p>
+<h2 id="切片扩容"><a href="#切片扩容" class="headerlink" title="切片扩容"></a>切片扩容</h2><p>为了增加切片的容量，需要创建一个新的更大容量的切片，然后将原始切片的内容复制到新切片中。这种技术与其他语言中动态数组的实现方式类似。以下示例通过创建一个新切片 t，将 s 的内容复制到 t 中，然后将切片值 t 赋值给 s，从而将 s 的容量翻倍：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs go">t := <span class="hljs-built_in">make</span>([]<span class="hljs-type">byte</span>, <span class="hljs-built_in">len</span>(s), (<span class="hljs-built_in">cap</span>(s)+<span class="hljs-number">1</span>)*<span class="hljs-number">2</span>) <span class="hljs-comment">// +1 in case cap(s) == 0</span><br><span class="hljs-keyword">for</span> i := <span class="hljs-keyword">range</span> s &#123;<br>        t[i] = s[i]<br>&#125;<br>s = t<br></code></pre></td></tr></table></figure>
+
+<p>这个常见操作的循环部分通过内置的 copy 函数变得更加容易。顾名思义，copy 将数据从源切片复制到目标切片。它返回复制的元素数量</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">copy</span><span class="hljs-params">(dst, src []T)</span></span> <span class="hljs-type">int</span><br></code></pre></td></tr></table></figure>
+
+<p>copy 函数支持不同长度切片之间的复制（仅复制较少元素的数量）。此外，copy 可以处理共享相同底层数组的源和目标切片，并正确处理重叠切片。</p>
+<p>使用 copy，我们可以简化上面的代码片段</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go">t := <span class="hljs-built_in">make</span>([]<span class="hljs-type">byte</span>, <span class="hljs-built_in">len</span>(s), (<span class="hljs-built_in">cap</span>(s)+<span class="hljs-number">1</span>)*<span class="hljs-number">2</span>)<br><span class="hljs-built_in">copy</span>(t, s)<br>s = t<br></code></pre></td></tr></table></figure>
+
+<p>一种常见操作是向切片末尾追加数据。该函数将字节元素追加到字节切片，并在必要时扩容切片，并返回更新后的切片值。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">AppendByte</span><span class="hljs-params">(slice []<span class="hljs-type">byte</span>, data ...<span class="hljs-type">byte</span>)</span></span> []<span class="hljs-type">byte</span> &#123;<br>    m := <span class="hljs-built_in">len</span>(slice)<br>    n := m + <span class="hljs-built_in">len</span>(data)<br>    <span class="hljs-keyword">if</span> n &gt; <span class="hljs-built_in">cap</span>(slice) &#123; <span class="hljs-comment">// if necessary, reallocate</span><br>        <span class="hljs-comment">// allocate double what&#x27;s needed, for future growth.</span><br>        newSlice := <span class="hljs-built_in">make</span>([]<span class="hljs-type">byte</span>, (n+<span class="hljs-number">1</span>)*<span class="hljs-number">2</span>)<br>        <span class="hljs-built_in">copy</span>(newSlice, slice)<br>        slice = newSlice<br>    &#125;<br>    slice = slice[<span class="hljs-number">0</span>:n]<br>    <span class="hljs-built_in">copy</span>(slice[m:n], data)<br>    <span class="hljs-keyword">return</span> slice<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>我们可以像下面这样使用 AppendByte</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go">p := []<span class="hljs-type">byte</span>&#123;<span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">5</span>&#125;<br>p = AppendByte(p, <span class="hljs-number">7</span>, <span class="hljs-number">11</span>, <span class="hljs-number">13</span>)<br><span class="hljs-comment">// p == []byte&#123;2, 3, 5, 7, 11, 13&#125;</span><br></code></pre></td></tr></table></figure>
+
+<p>像 <code>AppendByte</code> 这样的函数之所以有用，是因为它们可以完全控制切片增长的方式。根据程序的特性，可能需要以更小或更大的块分配空间，或者对重新分配的大小设置上限。</p>
+<p>但是大多数程序不需要完全控制，因此 Go 提供了内置的 <code>append</code> 函数，适用于大多数情况；它的签名为：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">append</span><span class="hljs-params">(s []T, x ...T)</span></span> []T<br></code></pre></td></tr></table></figure>
+
+<p><code>append</code> 函数将元素 <code>x</code> 追加到切片 <code>s</code> 的末尾，并在必要时对切片扩容</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs go">a := <span class="hljs-built_in">make</span>([]<span class="hljs-type">int</span>, <span class="hljs-number">1</span>)<br><span class="hljs-comment">// a == []int&#123;0&#125;</span><br>a = <span class="hljs-built_in">append</span>(a, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>)<br><span class="hljs-comment">// a == []int&#123;0, 1, 2, 3&#125;</span><br></code></pre></td></tr></table></figure>
+
+<p>要将一个切片追加到另一个切片，请使用 <strong>…</strong> 将第二个参数展开为参数列表。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs go">a := []<span class="hljs-type">string</span>&#123;<span class="hljs-string">&quot;John&quot;</span>, <span class="hljs-string">&quot;Paul&quot;</span>&#125;<br>b := []<span class="hljs-type">string</span>&#123;<span class="hljs-string">&quot;George&quot;</span>, <span class="hljs-string">&quot;Ringo&quot;</span>, <span class="hljs-string">&quot;Pete&quot;</span>&#125;<br>a = <span class="hljs-built_in">append</span>(a, b...) <span class="hljs-comment">// equivalent to &quot;append(a, b[0], b[1], b[2])&quot;</span><br><span class="hljs-comment">// a == []string&#123;&quot;John&quot;, &quot;Paul&quot;, &quot;George&quot;, &quot;Ringo&quot;, &quot;Pete&quot;&#125;</span><br></code></pre></td></tr></table></figure>
+
+<p>由于切片的零值 (nil) 的行为类似于零长度的切片，因此你可以先声明一个切片变量，然后在循环中追加元素</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// Filter returns a new slice holding only</span><br><span class="hljs-comment">// the elements of s that satisfy fn()</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">Filter</span><span class="hljs-params">(s []<span class="hljs-type">int</span>, fn <span class="hljs-keyword">func</span>(<span class="hljs-type">int</span>)</span></span> <span class="hljs-type">bool</span>) []<span class="hljs-type">int</span> &#123;<br>    <span class="hljs-keyword">var</span> p []<span class="hljs-type">int</span> <span class="hljs-comment">// == nil</span><br>    <span class="hljs-keyword">for</span> _, v := <span class="hljs-keyword">range</span> s &#123;<br>        <span class="hljs-keyword">if</span> fn(v) &#123;<br>            p = <span class="hljs-built_in">append</span>(p, v)<br>        &#125;<br>    &#125;<br>    <span class="hljs-keyword">return</span> p<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="一个潜在的“陷阱”"><a href="#一个潜在的“陷阱”" class="headerlink" title="一个潜在的“陷阱”"></a>一个潜在的“陷阱”</h2><p>正如之前提到的，重新切片不会复制底层数组。整个数组将一直保存在内存中，直到不再被引用。有时这会导致程序在只需要一小部分数据时，却将所有数据保存在内存中。</p>
+<p>例如，这个 <code>FindDigits</code> 函数将一个文件加载到内存中，并搜索其中第一组连续的数字字符，然后将它们作为新的切片返回。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">var</span> digitRegexp = regexp.MustCompile(<span class="hljs-string">&quot;[0-9]+&quot;</span>)<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">FindDigits</span><span class="hljs-params">(filename <span class="hljs-type">string</span>)</span></span> []<span class="hljs-type">byte</span> &#123;<br>    b, _ := ioutil.ReadFile(filename)<br>    <span class="hljs-keyword">return</span> digitRegexp.Find(b)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这段代码确实按照预期工作，但返回的 <code>[]byte</code> 指向包含整个文件的数组。由于切片引用原始数组，只要切片存在，垃圾回收器就无法释放数组；文件中少量有用的字节会将整个内容保留在内存中。</p>
+<p>为了解决这个问题，可以在返回数据之前将其复制到一个新的切片中：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">CopyDigits</span><span class="hljs-params">(filename <span class="hljs-type">string</span>)</span></span> []<span class="hljs-type">byte</span> &#123;<br>    b, _ := ioutil.ReadFile(filename)<br>    b = digitRegexp.Find(b)<br>    c := <span class="hljs-built_in">make</span>([]<span class="hljs-type">byte</span>, <span class="hljs-built_in">len</span>(b))<br>    <span class="hljs-built_in">copy</span>(c, b)<br>    <span class="hljs-keyword">return</span> c<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>通过使用 <code>append</code> 可以构建一个更简洁的版本。这部分可以留给读者作为练习。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Go/" class="print-no-link">#Go</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Go 切片的使用和内部实现</div>
+      <div>https://blog.zhangliangliang.cc/post/go-slice-usage-and-internal.html</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Bobby Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年2月27日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/post/go-json-patch.html" title="Go JSON patch">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Go JSON patch</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/post/etcd-cluster-operation-guide.html" title="etcd 集群运维">
+                        <span class="hidden-mobile">etcd 集群运维</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
