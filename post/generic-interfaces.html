@@ -1,0 +1,718 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Bobby Zhang">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="有一个概念，初次接触时可能不易察觉：接口本身也是一种类型，因此，它同样可以拥有类型参数。在为泛型函数和类型定义约束时，这一特性显得尤为强大。本文将通过几个常见场景，深入探讨如何运用带类型参数的接口，一展其威力。 一个简单的二叉搜索树我们从一个经典的例子开始：实现一个泛型的二叉搜索树。存储在树中的元素必须是可排序的，因此我们需要为类型参数添加一个约束，来明确排序规则。一个直接的选择是使用 Go 1.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="泛型接口">
+<meta property="og:url" content="https://blog.zhangliangliang.cc/post/generic-interfaces.html">
+<meta property="og:site_name" content="bobbyz3g&#39;s blogs.">
+<meta property="og:description" content="有一个概念，初次接触时可能不易察觉：接口本身也是一种类型，因此，它同样可以拥有类型参数。在为泛型函数和类型定义约束时，这一特性显得尤为强大。本文将通过几个常见场景，深入探讨如何运用带类型参数的接口，一展其威力。 一个简单的二叉搜索树我们从一个经典的例子开始：实现一个泛型的二叉搜索树。存储在树中的元素必须是可排序的，因此我们需要为类型参数添加一个约束，来明确排序规则。一个直接的选择是使用 Go 1.">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-08-14T03:20:11.000Z">
+<meta property="article:modified_time" content="2025-08-14T08:08:42.890Z">
+<meta property="article:author" content="Bobby Zhang">
+<meta property="article:tag" content="Go">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>泛型接口 - bobbyz3g&#39;s blogs.</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"blog.zhangliangliang.cc","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>bobbyz3g</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://wallpaper.kaiser925.workers.dev') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="泛型接口"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-08-14 11:20" pubdate>
+          2025年8月14日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          4.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          14 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">泛型接口</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>有一个概念，初次接触时可能不易察觉：接口本身也是一种类型，因此，它同样可以拥有类型参数。在为泛型函数和类型定义约束时，这一特性显得尤为强大。本文将通过几个常见场景，深入探讨如何运用带类型参数的接口，一展其威力。</p>
+<h2 id="一个简单的二叉搜索树"><a href="#一个简单的二叉搜索树" class="headerlink" title="一个简单的二叉搜索树"></a>一个简单的二叉搜索树</h2><p>我们从一个经典的例子开始：实现一个泛型的二叉搜索树。存储在树中的元素必须是可排序的，因此我们需要为类型参数添加一个约束，来明确排序规则。一个直接的选择是使用 Go 1.21 中引入的 <code>cmp.Ordered</code> 约束。它将类型参数限制为内置的有序类型（如字符串和数字），并允许我们直接使用内置的比较运算符。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// The zero value of a Tree is a ready-to-use empty tree.</span><br><span class="hljs-keyword">type</span> Tree[E cmp.Ordered] <span class="hljs-keyword">struct</span> &#123;<br>    root *node[E]<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(t *Tree[E])</span></span> Insert(element E) &#123;<br>    t.root = t.root.insert(element)<br>&#125;<br><br><span class="hljs-keyword">type</span> node[E cmp.Ordered] <span class="hljs-keyword">struct</span> &#123;<br>    value E<br>    left  *node[E]<br>    right *node[E]<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(n *node[E])</span></span> insert(element E) *node[E] &#123;<br>    <span class="hljs-keyword">if</span> n == <span class="hljs-literal">nil</span> &#123;<br>        <span class="hljs-keyword">return</span> &amp;node[E]&#123;value: element&#125;<br>    &#125;<br>    <span class="hljs-keyword">switch</span> &#123;<br>    <span class="hljs-keyword">case</span> element &lt; n.value:<br>        n.left = n.left.insert(element)<br>    <span class="hljs-keyword">case</span> element &gt; n.value:<br>        n.right = n.right.insert(element)<br>    &#125;<br>    <span class="hljs-keyword">return</span> n<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>然而，该方案的局限在于，它只适用于 Go 内置支持 <code>&lt;</code> 运算符的基本类型；你无法用它来存储像 <code>time.Time</code> 这样的结构体类型。</p>
+<p>为了解决这个问题，我们可以要求用户提供一个比较函数：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// A FuncTree must be created with NewTreeFunc.</span><br><span class="hljs-keyword">type</span> FuncTree[E any] <span class="hljs-keyword">struct</span> &#123;<br>    root *funcNode[E]<br>    cmp  <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(E, E)</span></span> <span class="hljs-type">int</span><br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">NewFuncTree</span>[<span class="hljs-title">E</span> <span class="hljs-title">any</span>]<span class="hljs-params">(cmp <span class="hljs-keyword">func</span>(E, E)</span></span> <span class="hljs-type">int</span>) *FuncTree[E] &#123;<br>    <span class="hljs-keyword">return</span> &amp;FuncTree[E]&#123;cmp: cmp&#125;<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(t *FuncTree[E])</span></span> Insert(element E) &#123;<br>    t.root = t.root.insert(t.cmp, element)<br>&#125;<br><br><span class="hljs-keyword">type</span> funcNode[E any] <span class="hljs-keyword">struct</span> &#123;<br>    value E<br>    left  *funcNode[E]<br>    right *funcNode[E]<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(n *funcNode[E])</span></span> insert(cmp <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(E, E)</span></span> <span class="hljs-type">int</span>, element E) *funcNode[E] &#123;<br>    <span class="hljs-keyword">if</span> n == <span class="hljs-literal">nil</span> &#123;<br>        <span class="hljs-keyword">return</span> &amp;funcNode[E]&#123;value: element&#125;<br>    &#125;<br>    sign := cmp(element, n.value)<br>    <span class="hljs-keyword">switch</span> &#123;<br>    <span class="hljs-keyword">case</span> sign &lt; <span class="hljs-number">0</span>:<br>        n.left = n.left.insert(cmp, element)<br>    <span class="hljs-keyword">case</span> sign &gt; <span class="hljs-number">0</span>:<br>        n.right = n.right.insert(cmp, element)<br>    &#125;<br>    <span class="hljs-keyword">return</span> n<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这种方法虽然可行，但同样存在不足。首先，我们无法再使用容器类型的零值，因为它需要显式初始化比较函数。其次，将比较函数作为字段存储，使得编译器难以对其进行内联优化，可能引入显著的运行时开销。</p>
+<p>更理想的方案是利用元素类型自身的方法来定义比较行为，因为方法与类型直接关联。这样一来，比较逻辑不必作为参数显式传递，编译器也能更好地洞察调用目标，从而可能进行内联优化。但问题是，我们如何通过约束来要求元素类型必须提供我们需要的方法呢？</p>
+<h2 id="在约束中使用接收器"><a href="#在约束中使用接收器" class="headerlink" title="在约束中使用接收器"></a>在约束中使用接收器</h2><p>我们首先想到的，或许是定义一个传统的接口，其中包含 <code>Compare</code> 方法：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Comparer <span class="hljs-keyword">interface</span>&#123;<br>  Compare(Comparer) <span class="hljs-type">int</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>然而，我们很快会发现这行不通。因为要实现该接口，<code>Compare</code> 方法的参数必须是 <code>Comparer</code> 接口类型。这意味着实现方需要对参数进行类型断言，而且每个实现该接口的类型都必须显式地导入定义 <code>Comparer</code> 的包，这使得代码耦合过高，不够通用。</p>
+<p>更好的方式是让 <code>Comparer</code> 接口本身变为泛型接口：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Comparer[T any] <span class="hljs-keyword">interface</span>&#123;<br>  Compare(T) <span class="hljs-type">int</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这个 <code>Comparer[T]</code> 定义了一个接口族，每种可实例化的类型 <code>T</code> 都会对应一个具体的接口。实现 <code>Comparer[T]</code> 的类型等于声明：“我可以将自己与 <code>T</code> 类型的实例进行比较”。例如，<code>time.Time</code> 类型因为定义了 <code>Compare(u Time) int</code> 方法，所以它自动实现了 <code>Comparer[time.Time]</code> 接口。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// 实现了 Comparer[Time]</span><br><span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(t Time)</span></span> Compare(u Time) <span class="hljs-type">int</span><br></code></pre></td></tr></table></figure>
+
+<p>这比最初的定义要好，但还不够。我们真正需要的是一个能够表达“类型参数可以与自身比较”的约束，即一个自引用的约束。这里的关键点在于，这种“自比较”的特性不一定需要体现在接口定义的内部（即 <code>Comparer</code> 类型中 <code>T</code> 的约束仍然是 <code>any</code>），而应该体现在我们使用它作为约束的时候：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// The zero value of a MethodTree is a ready-to-use empty tree.</span><br><span class="hljs-keyword">type</span> MethodTree[E Comparer[E]] <span class="hljs-keyword">struct</span> &#123;<br>    root *methodNode[E]<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(t *MethodTree[E])</span></span> Insert(element E) &#123;<br>    t.root = t.root.insert(element)<br>&#125;<br><br><span class="hljs-keyword">type</span> methodNode[E Comparer[E]] <span class="hljs-keyword">struct</span> &#123;<br>    value E<br>    left  *methodNode[E]<br>    right *methodNode[E]<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(n *methodNode[E])</span></span> insert(element E) *methodNode[E] &#123;<br>    <span class="hljs-keyword">if</span> n == <span class="hljs-literal">nil</span> &#123;<br>        <span class="hljs-keyword">return</span> &amp;methodNode[E]&#123;value: element&#125;<br>    &#125;<br>    sign := element.Compare(n.value)<br>    <span class="hljs-keyword">switch</span> &#123;<br>    <span class="hljs-keyword">case</span> sign &lt; <span class="hljs-number">0</span>:<br>        n.left = n.left.insert(element)<br>    <span class="hljs-keyword">case</span> sign &gt; <span class="hljs-number">0</span>:<br>        n.right = n.right.insert(element)<br>    &#125;<br>    <span class="hljs-keyword">return</span> n<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>由于 <code>time.Time</code> 实现了 <code>Comparer[time.Time]</code>，我们现在便可将其用于 ，并且依然可以方便地使用零值作为空容器。 <code>MethodTree</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">var</span> t MethodTree[time.Time]<br>t.Insert(time.Now())<br></code></pre></td></tr></table></figure>
+
+<p>为了提供最大的灵活性，我们的库可以同时提供上述所有三个版本的 API。如果想减少代码重复，所有版本都可以基于一个共享的内部实现来封装。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> node[E any] <span class="hljs-keyword">struct</span> &#123;<br>    value E<br>    left  *node[E]<br>    right *node[E]<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(n *node[E])</span></span> insert(cmp <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(E, E)</span></span> <span class="hljs-type">int</span>, element E) *node[E] &#123;<br>    <span class="hljs-keyword">if</span> n == <span class="hljs-literal">nil</span> &#123;<br>        <span class="hljs-keyword">return</span> &amp;node[E]&#123;value: element&#125;<br>    &#125;<br>    sign := cmp(element, n.value)<br>    <span class="hljs-keyword">switch</span> &#123;<br>    <span class="hljs-keyword">case</span> sign &lt; <span class="hljs-number">0</span>:<br>        n.left = n.left.insert(cmp, element)<br>    <span class="hljs-keyword">case</span> sign &gt; <span class="hljs-number">0</span>:<br>        n.right = n.right.insert(cmp, element)<br>    &#125;<br>    <span class="hljs-keyword">return</span> n<br>&#125;<br><br><span class="hljs-comment">// Insert inserts element into the tree, if E implements cmp.Ordered.</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(t *Tree[E])</span></span> Insert(element E) &#123;<br>    t.root = t.root.insert(cmp.Compare[E], element)<br>&#125;<br><br><span class="hljs-comment">// Insert inserts element into the tree, using the provided comparison function.</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(t *FuncTree[E])</span></span> Insert(element E) &#123;<br>    t.root = t.root.insert(t.cmp, element)<br>&#125;<br><br><span class="hljs-comment">// Insert inserts element into the tree, if E implements Comparer[E].</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(t *MethodTree[E])</span></span> Insert(element E) &#123;<br>    t.root = t.root.insert(E.Compare, element)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>值得注意的是，这个共享的内部实现（基于函数的版本）本身不受任何约束，以保持最大的灵活性。我们也没有将比较函数存储在结构体字段中，而是将其作为参数传递，因为函数参数通常比结构体字段更容易被编译器分析和优化。</p>
+<p>当然，这种封装仍然需要一些模板代码，因为每个导出的实现都需要复制完整的 API 并适配不同的调用模式。但好在这些封装代码通常逻辑简单，易于编写和阅读。</p>
+<h2 id="组合方法和类型集"><a href="#组合方法和类型集" class="headerlink" title="组合方法和类型集"></a>组合方法和类型集</h2><p>我们可以利用这棵树来实现一个有序集合（ordered set），它能以对数时间复杂度查找元素。现在，设想我们需要将元素查找的效率提升至近乎常数时间（O(1)）。一个自然的想法是在树结构之外，额外维护一个 map 来存储元素：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> OrderedSet[E Comparer[E]] <span class="hljs-keyword">struct</span> &#123;<br>    tree     MethodTree[E] <span class="hljs-comment">// for efficient iteration in order</span><br>    elements <span class="hljs-keyword">map</span>[E]<span class="hljs-type">bool</span>    <span class="hljs-comment">// for (near) constant time lookup</span><br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(s *OrderedSet[E])</span></span> Has(e E) <span class="hljs-type">bool</span> &#123;<br>    <span class="hljs-keyword">return</span> s.elements[e]<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(s *OrderedSet[E])</span></span> Insert(e E) &#123;<br>    <span class="hljs-keyword">if</span> s.elements == <span class="hljs-literal">nil</span> &#123;<br>        s.elements = <span class="hljs-built_in">make</span>(<span class="hljs-keyword">map</span>[E]<span class="hljs-type">bool</span>)<br>    &#125;<br>    <span class="hljs-keyword">if</span> s.elements[e] &#123;<br>        <span class="hljs-keyword">return</span><br>    &#125;<br>    s.elements[e] = <span class="hljs-literal">true</span><br>    s.tree.Insert(e)<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(s *OrderedSet[E])</span></span> All() iter.Seq[E] &#123;<br>    <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(yield <span class="hljs-keyword">func</span>(E)</span></span> <span class="hljs-type">bool</span>) &#123;<br>        s.tree.root.all(yield)<br>    &#125;<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(n *node[E])</span></span> all(yield <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(E)</span></span> <span class="hljs-type">bool</span>) <span class="hljs-type">bool</span> &#123;<br>    <span class="hljs-keyword">return</span> n == <span class="hljs-literal">nil</span> || (n.left.all(yield) &amp;&amp; yield(n.value) &amp;&amp; n.right.all(yield))<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>然而, 这个代码无法编译:</p>
+<figure class="highlight elm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs elm"><span class="hljs-title">invalid</span> map key <span class="hljs-keyword">type</span> <span class="hljs-type">E</span> (missing comparable constraint)<br></code></pre></td></tr></table></figure>
+
+<p>错误信息提示我们，为了将类型参数 <code>E</code> 作为 map 的键，我们需要为其添加额外的约束。<code>comparable</code> 是一个预声明的特殊约束，所有支持 <code>==</code> 和 <code>!=</code> 运算符的类型都满足它，这些类型也正是可以用作 map 键的类型</p>
+<p>我们有三种方式来为类型参数添加这个额外的约束，它们各有取舍:</p>
+<ol>
+<li><p>我们可以将 comparable 嵌入到原始的 Comparer 定义中:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Comparer[E any] <span class="hljs-keyword">interface</span> &#123;<br>    comparable<br>    Compare(E) <span class="hljs-type">int</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>缺点是这会限制我们所有的树类型都只能与可比较（comparable）的类型一起使用。通常，我们不希望在没有必要的情况下过度约束泛型类型</p>
+</li>
+<li><p>定义一个新的组合约束</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Comparer[E any] <span class="hljs-keyword">interface</span> &#123;<br>    Compare(E) <span class="hljs-type">int</span><br>&#125;<br><br><span class="hljs-keyword">type</span> ComparableComparer[E any] <span class="hljs-keyword">interface</span> &#123;<br>    comparable<br>    Comparer[E]<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这很简洁, 但它会在我们的 API 中引入一个新的标识符（<code>ComparableComparer</code>），而且这类名称往往很难起得优雅</p>
+</li>
+<li><p>在使用处内联约束:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> OrderedSet[E <span class="hljs-keyword">interface</span> &#123;<br>    comparable<br>    Comparer[E]<br>&#125;] <span class="hljs-keyword">struct</span> &#123;<br>    tree     Tree[E]<br>    elements <span class="hljs-keyword">map</span>[E]<span class="hljs-keyword">struct</span>&#123;&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这种内联方式会降低代码的可读性，尤其是在需要频繁使用该约束的场景下。同时，这也使得在其他地方重用此约束变得困难。</p>
+</li>
+</ol>
+<p>具体选择哪一种，很大程度上取决于个人偏好和项目约定 .</p>
+<h2 id="不-约束泛型接口"><a href="#不-约束泛型接口" class="headerlink" title="(不) 约束泛型接口"></a>(不) 约束泛型接口</h2><p>对泛型接口的约束是一个值得深入探讨的话题。假设你想为通用的“集合”类型定义一个接口。考虑到现实世界中存在多种多样的集合实现，它们在性能和特性上各有权衡，定义一个通用接口可以增加代码的灵活性，将具体实现的选择权交给用户:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Set[E any] <span class="hljs-keyword">interface</span> &#123;<br>    Insert(E)<br>    Delete(E)<br>    Has(E) <span class="hljs-type">bool</span><br>    All() iter.Seq[E]<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>一个很自然的问题是：这个泛型接口的类型参数 <code>E</code> 应该接受什么样的约束？如果可能，**泛型接口上的类型参数约束应尽量保持为 <code>any</code>**，以允许任何类型。</p>
+<p>答案，其实已在我们此前的讨论中初见端倪：不同的具体实现可能需要不同的约束。我们上面实现的所有 <code>Tree</code> 类型以及 <code>OrderedSet</code> 类型，尽管它们各自有着不同的约束，但都可以实现这个 <code>Set[E]</code> 接口。</p>
+<p>定义接口的核心目的，正是为了将具体实现的选择权交给用户。既然我们无法预知用户会为其实现施加何种约束，那么就应该将比 <code>any</code> 更强的约束下放到具体的实现中，而不是限制在接口定义上。</p>
+<h2 id="指针接收器"><a href="#指针接收器" class="headerlink" title="指针接收器"></a>指针接收器</h2><p>让我们尝试在实践中使用 <code>Set</code> 接口。考虑一个从序列中移除重复元素的函数：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// Unique removes duplicate elements from the input sequence, yielding only</span><br><span class="hljs-comment">// the first instance of any element.</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">Unique</span>[<span class="hljs-title">E</span> <span class="hljs-title">comparable</span>]<span class="hljs-params">(input iter.Seq[E])</span></span> iter.Seq[E] &#123;<br>    <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(yield <span class="hljs-keyword">func</span>(E)</span></span> <span class="hljs-type">bool</span>) &#123;<br>        seen := <span class="hljs-built_in">make</span>(<span class="hljs-keyword">map</span>[E]<span class="hljs-type">bool</span>)<br>        <span class="hljs-keyword">for</span> v := <span class="hljs-keyword">range</span> input &#123;<br>            <span class="hljs-keyword">if</span> seen[v] &#123;<br>                <span class="hljs-keyword">continue</span><br>            &#125;<br>            <span class="hljs-keyword">if</span> !yield(v) &#123;<br>                <span class="hljs-keyword">return</span><br>            &#125;<br>            seen[v] = <span class="hljs-literal">true</span><br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这里使用 <code>map</code> 作为 <code>Set[E]</code> 的一个简单实现，它只适用于可比较的类型。如果我们想让它支持任意类型，就需要将 <code>map</code> 替换为一个 <code>Set[E]</code> 接口：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// Unique removes duplicate elements from the input sequence, yielding only</span><br><span class="hljs-comment">// the first instance of any element.</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">Unique</span>[<span class="hljs-title">E</span> <span class="hljs-title">any</span>]<span class="hljs-params">(input iter.Seq[E])</span></span> iter.Seq[E] &#123;<br>    <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(yield <span class="hljs-keyword">func</span>(E)</span></span> <span class="hljs-type">bool</span>) &#123;<br>        <span class="hljs-keyword">var</span> seen Set[E]<br>        <span class="hljs-keyword">for</span> v := <span class="hljs-keyword">range</span> input &#123;<br>            <span class="hljs-keyword">if</span> seen.Has(v) &#123;<br>                <span class="hljs-keyword">continue</span><br>            &#125;<br>            <span class="hljs-keyword">if</span> !yield(v) &#123;<br>                <span class="hljs-keyword">return</span><br>            &#125;<br>            seen.Insert(v)<br>        &#125;<br>    &#125;<br>&#125;<br><br></code></pre></td></tr></table></figure>
+
+<p>但这并不可行。因为 <code>Set[E]</code> 是一个接口类型，变量 <code>seen</code> 的零值是 <code>nil</code> 。直接在 <code>nil</code> 接口值上调用方法会引发运行时 panic。我们需要 <code>Set[E]</code> 接口的一个具体实现。然而，正如我们所见，并不存在一个适用于所有元素类型的通用 <code>Set[E]</code> 实现。 </p>
+<p>因此，我们必须要求用户提供一个我们可以使用的具体实现，将其作为额外的类型参数传入：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// Unique removes duplicate elements from the input sequence, yielding only</span><br><span class="hljs-comment">// the first instance of any element.</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">Unique</span>[<span class="hljs-title">E</span> <span class="hljs-title">any</span>, <span class="hljs-title">S</span> <span class="hljs-title">Set</span>[<span class="hljs-title">E</span>]]<span class="hljs-params">(input iter.Seq[E])</span></span> iter.Seq[E] &#123;<br>    <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(yield <span class="hljs-keyword">func</span>(E)</span></span> <span class="hljs-type">bool</span>) &#123;<br>        <span class="hljs-keyword">var</span> seen S<br>        <span class="hljs-keyword">for</span> v := <span class="hljs-keyword">range</span> input &#123;<br>            <span class="hljs-keyword">if</span> seen.Has(v) &#123;<br>                <span class="hljs-keyword">continue</span><br>            &#125;<br>            <span class="hljs-keyword">if</span> !yield(v) &#123;<br>                <span class="hljs-keyword">return</span><br>            &#125;<br>            seen.Insert(v)<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="https://go.dev/play/p/kjkGy5cNz8T">playground</a></p>
+<p>当我们尝试传入一个我们之前定义的 <code>OrderedSet[E]</code> 作为 <code>S</code> 时，会遇到另一个问题：</p>
+<figure class="highlight mathematica"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs mathematica"><span class="hljs-operator">//</span> <span class="hljs-variable">OrderedSet</span><span class="hljs-punctuation">[</span><span class="hljs-built_in">E</span><span class="hljs-punctuation">]</span> <span class="hljs-variable">does</span> <span class="hljs-variable">not</span> <span class="hljs-variable">satisfy</span> <span class="hljs-built_in">Set</span><span class="hljs-punctuation">[</span><span class="hljs-built_in">E</span><span class="hljs-punctuation">]</span> <span class="hljs-punctuation">(</span><span class="hljs-variable">method</span> <span class="hljs-built_in">All</span> <span class="hljs-variable">has</span> <span class="hljs-variable">pointer</span> <span class="hljs-variable">receiver</span><span class="hljs-punctuation">)</span><br><span class="hljs-built_in">Unique</span><span class="hljs-punctuation">[</span><span class="hljs-built_in">E</span><span class="hljs-operator">,</span> <span class="hljs-variable">OrderedSet</span><span class="hljs-punctuation">[</span><span class="hljs-built_in">E</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">(</span><span class="hljs-variable">slices</span><span class="hljs-operator">.</span><span class="hljs-built_in">Values</span><span class="hljs-punctuation">(</span><span class="hljs-variable">s</span><span class="hljs-punctuation">)</span><span class="hljs-punctuation">)</span><br><span class="hljs-operator">//</span> <span class="hljs-variable">panic</span><span class="hljs-operator">:</span> <span class="hljs-variable">invalid</span> <span class="hljs-variable">memory</span> <span class="hljs-variable">address</span> <span class="hljs-variable">or</span> <span class="hljs-variable">nil</span> <span class="hljs-variable">pointer</span> <span class="hljs-variable">dereference</span><br><span class="hljs-built_in">Unique</span><span class="hljs-punctuation">[</span><span class="hljs-built_in">E</span><span class="hljs-operator">,</span> <span class="hljs-operator">*</span><span class="hljs-variable">OrderedSet</span><span class="hljs-punctuation">[</span><span class="hljs-built_in">E</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">(</span><span class="hljs-variable">slices</span><span class="hljs-operator">.</span><span class="hljs-built_in">Values</span><span class="hljs-punctuation">(</span><span class="hljs-variable">s</span><span class="hljs-punctuation">)</span><span class="hljs-punctuation">)</span><br></code></pre></td></tr></table></figure>
+
+<p>第一个问题从错误信息中一目了然：我们的 <code>OrderedSet</code> 的方法（如 <code>Insert</code>）使用了指针接收器，因此满足 <code>Set[E]</code> 接口的是 <code>*OrderedSet[E]</code> 类型，而不是 <code>OrderedSet[E]</code> 类型。</p>
+<p>然而，当我们修正这一点，传入 <code>*OrderedSet[E]</code> 后，又会遇到第二个问题。这源于我们声明变量的方式 <code>var seen S</code>。如果 <code>S</code> 是 <code>*OrderedSet[E]</code>，那么 <code>seen</code> 会被初始化为 <code>nil</code> ，后续调用其方法依然会导致 <code>panic</code></p>
+<p>我们陷入了一个两难境地：如果类型参数是值类型，我们无法调用指针方法；如果是指针类型，我们得到的却是一个 <code>nil</code> 指针。我们需要的是一个非 <code>nil</code> 的指针。</p>
+<p>结果是，我们需要同时处理值类型和指针类型。为此，我们必须引入一个带有新约束 <code>PtrToSet</code> 的附加类型参数 ： <code>PS</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// PtrToSet is implemented by a pointer type implementing the Set[E] interface.</span><br><span class="hljs-keyword">type</span> PtrToSet[S, E any] <span class="hljs-keyword">interface</span> &#123;<br>    *S<br>    Set[E]<br>&#125;<br><br><span class="hljs-comment">// Unique removes duplicate elements from the input sequence, yielding only</span><br><span class="hljs-comment">// the first instance of any element.</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">Unique</span>[<span class="hljs-title">E</span>, <span class="hljs-title">S</span> <span class="hljs-title">any</span>, <span class="hljs-title">PS</span> <span class="hljs-title">PtrToSet</span>[<span class="hljs-title">S</span>, <span class="hljs-title">E</span>]]<span class="hljs-params">(input iter.Seq[E])</span></span> iter.Seq[E] &#123;<br>    <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(yield <span class="hljs-keyword">func</span>(E)</span></span> <span class="hljs-type">bool</span>) &#123;<br>        <span class="hljs-comment">// We convert to PS, as only that is constrained to have the methods.</span><br>        <span class="hljs-comment">// The conversion is allowed, because the type set of PS only contains *S.</span><br>        seen := PS(<span class="hljs-built_in">new</span>(S))<br>        <span class="hljs-keyword">for</span> v := <span class="hljs-keyword">range</span> input &#123;<br>            <span class="hljs-keyword">if</span> seen.Has(v) &#123;<br>                <span class="hljs-keyword">continue</span><br>            &#125;<br>            <span class="hljs-keyword">if</span> !yield(v) &#123;<br>                <span class="hljs-keyword">return</span><br>            &#125;<br>            seen.Insert(v)<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="https://go.dev/play/p/Kp1jJRVjmYa">playground</a></p>
+<p>这里的诀窍在于，我们通过 <code>PtrToSet</code> 接口上的额外类型参数，巧妙地将函数签名中的 <code>S</code> 和 <code>PS</code> 两个类型参数关联起来。<code>S</code> 本身不受约束，但 <code>PS</code> 必须是 <code>*S</code> 类型，并且必须实现 <code>Set[E]</code> 接口。通过这种方式，我们有效地约束了 <code>S</code> 必须拥有一组方法，且这些方法必须定义在指针接收器上。</p>
+<p>虽然定义这样的函数需要一个额外的类型参数，但幸运的是，这并不会让调用代码变得复杂：只要这个额外的类型参数位于列表末尾，Go 的类型推断就能处理它：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// The third type argument is inferred to be *OrderedSet[int]</span><br>Unique[<span class="hljs-type">int</span>, OrderedSet[<span class="hljs-type">int</span>]](slices.Values(s))<br></code></pre></td></tr></table></figure>
+
+<p>这是一个值得记住的通用模式，无论是在阅读他人的代码，还是在编写自己的库时</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">SomeFunction</span>[<span class="hljs-title">T</span> <span class="hljs-title">any</span>, <span class="hljs-title">PT</span> <span class="hljs-title">interface</span></span>&#123; *T; SomeMethods &#125;]()<br></code></pre></td></tr></table></figure>
+
+<p>如果你有两个类型参数，其中一个被限制为指向另一个的指针，则约束将确保相关方法使用指针接收器。</p>
+<h2 id="需要指针类型接收器约束吗"><a href="#需要指针类型接收器约束吗" class="headerlink" title="需要指针类型接收器约束吗"></a>需要指针类型接收器约束吗</h2><p>读到这里，你或许会感到有些困惑。上述模式确实相当复杂，期望每个 Go 程序员都能透彻理解其背后的机制似乎不太现实。而且，我们还不得不在 API 中引入了新的名称。这正是当初人们对 Go 添加泛型所担忧的问题之一</p>
+<p>因此，当你发现自己陷入这类问题时，非常值得<strong>后退一步</strong>。我们通常可以通过换个角度思考问题来避免这种复杂性。在上面的例子中，我们构建了一个接受迭代器 <code>Seq[E]</code> 并返回一个去重后迭代器 <code>Seq[E]</code> 的函数。但要去重，我们必然需要将元素存入一个集合。既然无论如何都需要为结果分配存储空间，那么将结果表示为流（iterator）可能并没有带来真正的益处</p>
+<p>如果我们重新审视这个问题，可以通过将 <code>Set[E]</code> 作为一个普通的接口值参数来传递，从而完全避免额外的类型参数和复杂的约束。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// InsertAll adds all unique elements from seq into set.</span><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">InsertAll</span>[<span class="hljs-title">E</span> <span class="hljs-title">any</span>]<span class="hljs-params">(set Set[E], seq iter.Seq[E])</span></span> &#123;<br>    <span class="hljs-keyword">for</span> v := <span class="hljs-keyword">range</span> seq &#123;<br>        set.Insert(v)<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>通过将 <code>Set</code> 作为一个普通的接口类型参数，调用方就必须提供一个有效的、非  <code>nil</code> 的具体实现实例。这是一种非常常见且清晰的模式。如果调用方后续需要一个迭代器 <code>Seq[E]</code>，他们只需调用 <code>set.All()</code> 即可</p>
+<p>这个方案虽然给调用者增加了一点点负担（需要预先创建 <code>set</code> 实例），但与复杂的指针接收器约束相比，它还有一个显著的优势：回想一下，我们最初的简单集合实现是 <code>map[E]bool</code>。基于它来实现 <code>Set[E]</code> 接口非常容易：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> HashSet[E comparable] <span class="hljs-keyword">map</span>[E]<span class="hljs-type">bool</span><br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(s HashSet[E])</span></span> Insert(v E)       &#123; s[v] = <span class="hljs-literal">true</span> &#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(s HashSet[E])</span></span> Delete(v E)       &#123; <span class="hljs-built_in">delete</span>(s, v) &#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(s HashSet[E])</span></span> Has(v E) <span class="hljs-type">bool</span>     &#123; <span class="hljs-keyword">return</span> s[v] &#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(s HashSet[E])</span></span> All() iter.Seq[E] &#123; <span class="hljs-keyword">return</span> maps.Keys(s) &#125;<br></code></pre></td></tr></table></figure>
+
+<p>这个 <code>HashSet</code> 的实现方法使用的都是<strong>值接收器</strong>，而非指针接收器。因此，尽管它是一个完全有效的 <code>Set[E]</code> 实现，但它并不能满足我们之前那个复杂的、要求指针接收器的 <code>Unique</code> 函数的约束。然而，它却能与我们这个更简单的 <code>InsertAll</code> 函数完美配合 </p>
+<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>我希望本文阐明了在接口类型上使用类型参数的一些模式和权衡。泛型接口是一个强大的工具，但能力越大，也意味着复杂性越高。以下是几个关键的 takeaway：</p>
+<ol>
+<li><strong>自我引用约束</strong>：利用泛型接口 <code>Constraint[T]</code> 约束类型 <code>T</code> 本身，实现如 <code>MethodTree[E Comparer[E]]</code> 这样的自引用约束，要求类型拥有处理同类型实例的方法。</li>
+<li><strong>关联约束</strong>：通过泛型接口为不同的类型参数建立关联，例如约束一个类型参数必须是另一个类型参数的指针类型，并实现特定接口。</li>
+<li><strong>抽象不同实现</strong>：使用泛型接口（如 <code>Set[E]</code>）来统一代表多种具有不同约束的具体实现（如基于 <code>cmp.Ordered</code>、比较函数或 <code>Compare</code> 方法的树）。</li>
+<li><strong>警惕过度复杂</strong>：当你发现需要编写复杂的指针接收器约束时，不妨后退一步，思考能否通过重构 API（例如，将对象作为参数传入而非在函数内创建）来简化设计。</li>
+</ol>
+<p>最后，请牢记：切勿过度设计。一个灵活性稍逊但更简单、可读性更强的方案，往往是更明智的选择。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Go/" class="print-no-link">#Go</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>泛型接口</div>
+      <div>https://blog.zhangliangliang.cc/post/generic-interfaces.html</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Bobby Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2025年8月14日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/post/go-runtime-image-timezone.html" title="Golang 运行时镜像时区问题">
+                        <span class="hidden-mobile">Golang 运行时镜像时区问题</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

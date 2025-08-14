@@ -1,3 +1,4 @@
+https://blog.zhangliangliang.cc/post/generic-interfaces.html
 https://blog.zhangliangliang.cc/about/index.html
 https://blog.zhangliangliang.cc/tags/index.html
 https://blog.zhangliangliang.cc/post/why-need-helm.html
