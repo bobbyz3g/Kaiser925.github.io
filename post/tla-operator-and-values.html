@@ -7,8 +7,11 @@
 
 <head>
   <meta charset="UTF-8">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
   <link rel="icon" href="/img/favicon.png">
+  
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
@@ -48,7 +51,7 @@
 <!-- 主题依赖的图标库，不要自行修改 -->
 <!-- Do not modify the link that theme dependent icons -->
 
-<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
 
 
 
@@ -69,7 +72,7 @@
   <script id="fluid-configs">
     var Fluid = window.Fluid || {};
     Fluid.ctx = Object.assign({}, Fluid.ctx)
-    var CONFIG = {"hostname":"blog.zhangliangliang.cc","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+    var CONFIG = {"hostname":"blog.zhangliangliang.cc","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"gtag":null,"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
 
     if (CONFIG.web_analytics.follow_dnt) {
       var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
@@ -82,7 +85,7 @@
 
 
   
-<meta name="generator" content="Hexo 6.3.0"></head>
+<meta name="generator" content="Hexo 8.1.1"></head>
 
 
 <body>
@@ -104,7 +107,7 @@
       <div class="animated-icon"><span></span><span></span><span></span></div>
     </button>
 
-    <!-- Collapsible content -->
+    <!-- Collapsible content (desktop) -->
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav ml-auto text-center">
         
@@ -176,6 +179,95 @@
   </div>
 </nav>
 
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
   
 
 <div id="banner" class="banner" parallax=true
@@ -209,7 +301,7 @@
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          2.6k 字
+          5.3k 字
         
       </span>
     
@@ -221,7 +313,7 @@
         
         
           <!-- compatible with older versions-->
-          9 分钟
+          17 分钟
         
       </span>
     
@@ -238,6 +330,8 @@
     </div>
   </div>
 </div>
+
+
 
 </div>
 
@@ -272,7 +366,7 @@
 <p>算子的右半部分称之为表达式.</p>
 <h2 id="IF-THEN-ELSE"><a href="#IF-THEN-ELSE" class="headerlink" title="IF-THEN-ELSE"></a>IF-THEN-ELSE</h2><p>在 TLA+ 中有三个结构化表达式的关键字, 分别是 <strong>let</strong> 语句, <strong>case</strong> 语句以及条件语句.</p>
 <p>条件语句如下</p>
-<figure class="highlight llvm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs llvm">Abs(<span class="hljs-keyword">x</span>) <span class="hljs-operator">=</span><span class="hljs-operator">=</span> IF <span class="hljs-keyword">x</span> &lt; <span class="hljs-number">0</span> THEN -<span class="hljs-keyword">x</span> ELSE <span class="hljs-keyword">x</span><br></code></pre></td></tr></table></figure>
+<figure class="highlight gml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs gml">Abs(<span class="hljs-variable language_">x</span>) == IF <span class="hljs-variable language_">x</span> &lt; <span class="hljs-number">0</span> THEN -<span class="hljs-variable language_">x</span> ELSE <span class="hljs-variable language_">x</span><br></code></pre></td></tr></table></figure>
 
 <p>语句意义和常用编程语言中的三元表达式是相同的.</p>
 <p>表达式总是会等于一个值, 因此 ELSE 是必须存在的.</p>
@@ -390,7 +484,7 @@
 
 <p>你会发现它有 86400 个元素。现在我们离 AddTimes 的属性又近了一步：我们希望 AddTimes 的结果总是返回 ClockType 的值。</p>
 <h3 id="Map-Filter"><a href="#Map-Filter" class="headerlink" title="Map Filter"></a>Map Filter</h3><p>Set 可以被 map 以及 filter</p>
-<figure class="highlight livescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs livescript"><span class="hljs-string">\*</span> <span class="hljs-built_in">Map</span><br>Squares == &#123;x*x: x <span class="hljs-string">\in</span> <span class="hljs-number">1.</span>.<span class="hljs-number">4</span>&#125;<br><br><span class="hljs-string">\*</span> Filter<br>Evens == &#123;x <span class="hljs-string">\in</span> <span class="hljs-number">1.</span>.<span class="hljs-number">4</span>: x % <span class="hljs-number">2</span> = <span class="hljs-number">0</span> &#125;<br></code></pre></td></tr></table></figure>
+<figure class="highlight gml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs gml">\* Map<br>Squares == &#123;<span class="hljs-variable language_">x</span>*<span class="hljs-variable language_">x</span>: <span class="hljs-variable language_">x</span> \in <span class="hljs-number">1.</span><span class="hljs-number">.4</span>&#125;<br><br>\* Filter<br>Evens == &#123;<span class="hljs-variable language_">x</span> \in <span class="hljs-number">1.</span><span class="hljs-number">.4</span>: <span class="hljs-variable language_">x</span> % <span class="hljs-number">2</span> = <span class="hljs-number">0</span> &#125;<br></code></pre></td></tr></table></figure>
 
 <h3 id="CHOOSE"><a href="#CHOOSE" class="headerlink" title="CHOOSE"></a>CHOOSE</h3><p>从时钟值中获取午夜过后的秒数非常简单。但反过来呢？如果我们有一个以秒为单位的时间，我们可以通过以下方法得到时钟时间</p>
 <ol>
@@ -410,22 +504,22 @@
 </li>
 </ol>
 <p>我们不会这样做，因为 “所有可能的时钟值集合 “长度超过 80,000 个元素，在 80,000 个元素的列表中进行查找会浪费资源。但这样做更符合转换的定义，使其对规范更有用。在 TLA+ 中，我们可以这样编写选择：</p>
-<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">ToClock</span><span class="hljs-params">(seconds)</span></span> == CHOOSE x \<span class="hljs-keyword">in</span> ClockType: <span class="hljs-built_in">ToSeconds</span>(x) = seconds<br></code></pre></td></tr></table></figure>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">ToClock</span><span class="hljs-params">(seconds)</span></span> == CHOOSE <span class="hljs-attribute">x</span> \in ClockType: <span class="hljs-built_in">ToSeconds</span>(x) = seconds<br></code></pre></td></tr></table></figure>
 
 <p><code>CHOOSE x \in set: P(x)</code> 是通用的 “选择 “语法.</p>
 <p>当我们需要从一个集合中提取一个值时，CHOOSE 就会派上用场。</p>
 <p>如果我们写 ToClock(86401) 会怎样？没有任何时钟时间有 86,401 秒。如果尝试这样做，TLC 将引发错误。这与实现方案截然不同，后者会给出一个无意义的值。99% 的情况下，如果找不到对应的集合元素，那就是规范中的错误，是你没有考虑到的边缘情况。最好是强化算子:</p>
-<figure class="highlight excel"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs excel">ToClock(seconds) == <span class="hljs-built_in">CHOOSE</span> x \i<span class="hljs-built_in">n</span> ClockTy<span class="hljs-symbol">pe:</span> ToSeconds(x) = seconds % <span class="hljs-number">86400</span><br></code></pre></td></tr></table></figure>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">ToClock</span><span class="hljs-params">(seconds)</span></span> == CHOOSE <span class="hljs-attribute">x</span> \in ClockType: <span class="hljs-built_in">ToSeconds</span>(x) = seconds % <span class="hljs-number">86400</span><br></code></pre></td></tr></table></figure>
 
 <h3 id="LET"><a href="#LET" class="headerlink" title="LET"></a>LET</h3><p>现在, 你可以想象到 TLA+ 的算子可以非常负责. 为了简化他们, 我们可以通过 LET 来将他们划分为不同的子算子</p>
-<figure class="highlight excel"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs excel">ToClock(seconds) ==<br>  LET seconds_per_day == <span class="hljs-number">86400</span><br>  IN <span class="hljs-built_in">CHOOSE</span> x \i<span class="hljs-built_in">n</span> ClockTy<span class="hljs-symbol">pe:</span> ToSeconds(x) = seconds % seconds_per_day<br></code></pre></td></tr></table></figure>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">ToClock</span><span class="hljs-params">(seconds)</span></span> ==<br>  LET seconds_per_day == <span class="hljs-number">86400</span><br>  IN CHOOSE <span class="hljs-attribute">x</span> \in ClockType: <span class="hljs-built_in">ToSeconds</span>(x) = seconds % seconds_per_day<br></code></pre></td></tr></table></figure>
 
 <p>LET 给我们提供了一个新定义，本地作用域为 ToClock。seconds_per_day 是一个操作符，只存在于这个定义中。</p>
 <p>我们也可以在 LET 中添加参数化操作符！</p>
-<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">ThreeMax</span><span class="hljs-params">(a, b, c)</span></span> ==<br>   LET<br>     <span class="hljs-built_in">Max</span>(x, y) == IF x &gt; y THEN x ELSE y<br>   IN<br>     <span class="hljs-built_in">Max</span>(<span class="hljs-built_in">Max</span>(<span class="hljs-selector-tag">a</span>, b), c)<br></code></pre></td></tr></table></figure>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">ThreeMax</span><span class="hljs-params">(a, b, c)</span></span> ==<br>   LET<br>     <span class="hljs-built_in">Max</span>(<span class="hljs-attribute">x</span>, y) == IF x &gt; y THEN x ELSE y<br>   IN<br>     <span class="hljs-built_in">Max</span>(<span class="hljs-built_in">Max</span>(<span class="hljs-selector-tag">a</span>, b), c)<br></code></pre></td></tr></table></figure>
 
 <p>你可以定义多个算子在一个 LET 中:</p>
-<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">ThreeMax</span><span class="hljs-params">(a, b, c)</span></span> ==<br>   LET<br>     <span class="hljs-built_in">Max</span>(x, y) == IF x &gt; y THEN x ELSE y<br>     maxab == <span class="hljs-built_in">Max</span>(<span class="hljs-selector-tag">a</span>, b)<br>   IN<br>     <span class="hljs-built_in">Max</span>(maxab, c)<br></code></pre></td></tr></table></figure>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">ThreeMax</span><span class="hljs-params">(a, b, c)</span></span> ==<br>   LET<br>     <span class="hljs-built_in">Max</span>(<span class="hljs-attribute">x</span>, y) == IF x &gt; y THEN x ELSE y<br>     maxab == <span class="hljs-built_in">Max</span>(<span class="hljs-selector-tag">a</span>, b)<br>   IN<br>     <span class="hljs-built_in">Max</span>(maxab, c)<br></code></pre></td></tr></table></figure>
 
 <p>LET 中的每个运算符都可以引用该范围内先前定义的运算符。这样，我们就可以逐步构建解决方案。</p>
 <figure class="highlight livecodeserver"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs livecodeserver">ToClock2(<span class="hljs-built_in">seconds</span>) ==<br>  LET<br>    h == <span class="hljs-built_in">seconds</span> \<span class="hljs-keyword">div</span> <span class="hljs-number">3600</span><br>    h_left == <span class="hljs-built_in">seconds</span> % <span class="hljs-number">3600</span><br>    m == h_left \<span class="hljs-keyword">div</span> <span class="hljs-number">60</span><br>    m_left == h_left % <span class="hljs-number">60</span><br>    s == m_left<br>  IN<br>    &lt;&lt;h, m, s&gt;&gt;<br></code></pre></td></tr></table></figure>
@@ -480,7 +574,7 @@
               
                 <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
                   <span class="hint--top hint--rounded" aria-label="BY - 署名">
-                    <i class="iconfont icon-by"></i>
+                    <i class="iconfont icon-cc-by"></i>
                   </span>
                 </a>
               
@@ -618,7 +712,6 @@
   
   
   
-  
 </div>
 
   </footer>
@@ -676,7 +769,63 @@
     var boardCtn = jQuery('#board-ctn');
     var boardTop = boardCtn.offset().top;
 
-    window.tocbot.init(Object.assign({
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
       tocSelector     : '#toc-body',
       contentSelector : '.markdown-body',
       linkClass       : 'tocbot-link',
@@ -687,10 +836,16 @@
       scrollSmooth    : true,
       includeTitleTags: true,
       headingsOffset  : -boardTop,
-    }, CONFIG.toc));
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
     if (toc.find('.toc-list-item').length > 0) {
       toc.css('visibility', 'visible');
     }
+    expandAllToc();
+    bindTocToggle();
 
     Fluid.events.registerRefreshCallback(function() {
       if ('tocbot' in window) {
@@ -702,6 +857,8 @@
         if (toc.find('.toc-list-item').length > 0) {
           toc.css('visibility', 'visible');
         }
+        expandAllToc();
+        bindTocToggle();
       }
     });
   });

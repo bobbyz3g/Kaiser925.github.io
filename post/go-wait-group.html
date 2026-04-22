@@ -1,0 +1,897 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Bobby Zhang">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="你好, 我是 Bobby. sync.WaitGroup 是 Go 并发编程中最常用的同步原语之一，用于等待一组 goroutine 完成任务。 但你知道吗？它的内部结构在不同 Go 版本中经历了多次改动，核心原因是一个困扰了开发者多年的问题——内存对齐。 什么是 sync.WaitGroup？假设你有一个大任务，决定把它拆成多个可以并发执行、互不依赖的小任务，自然会用 goroutine 来跑：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="go-wait-group">
+<meta property="og:url" content="https://blog.zhangliangliang.cc/post/go-wait-group.html">
+<meta property="og:site_name" content="bobbyz3g&#39;s blogs.">
+<meta property="og:description" content="你好, 我是 Bobby. sync.WaitGroup 是 Go 并发编程中最常用的同步原语之一，用于等待一组 goroutine 完成任务。 但你知道吗？它的内部结构在不同 Go 版本中经历了多次改动，核心原因是一个困扰了开发者多年的问题——内存对齐。 什么是 sync.WaitGroup？假设你有一个大任务，决定把它拆成多个可以并发执行、互不依赖的小任务，自然会用 goroutine 来跑：">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-04-22T13:15:12.000Z">
+<meta property="article:modified_time" content="2026-04-22T13:16:22.996Z">
+<meta property="article:author" content="Bobby Zhang">
+<meta property="article:tag" content="Go">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>go-wait-group - bobbyz3g&#39;s blogs.</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"blog.zhangliangliang.cc","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null},"gtag":null,"woyaola":null,"cnzz":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>bobbyz3g</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://wallpaper.kaiser925.workers.dev') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="go-wait-group"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-04-22 21:15" pubdate>
+          2026年4月22日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          6.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          20 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">go-wait-group</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>你好, 我是 Bobby.</p>
+<p><code>sync.WaitGroup</code> 是 Go 并发编程中最常用的同步原语之一，用于等待一组 goroutine 完成任务。</p>
+<p>但你知道吗？它的内部结构在不同 Go 版本中经历了多次改动，核心原因是一个困扰了开发者多年的问题——<strong>内存对齐</strong>。</p>
+<h2 id="什么是-sync-WaitGroup？"><a href="#什么是-sync-WaitGroup？" class="headerlink" title="什么是 sync.WaitGroup？"></a>什么是 sync.WaitGroup？</h2><p>假设你有一个大任务，决定把它拆成多个可以并发执行、互不依赖的小任务，自然会用 goroutine 来跑：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>    <span class="hljs-keyword">for</span> i := <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">10</span>; i++ &#123;<br>        <span class="hljs-keyword">go</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(i <span class="hljs-type">int</span>)</span></span> &#123;<br>            fmt.Println(<span class="hljs-string">&quot;Task&quot;</span>, i)<br>        &#125;(i)<br>    &#125;<br><br>    fmt.Println(<span class="hljs-string">&quot;Done&quot;</span>)<br>&#125;<br><br><span class="hljs-comment">// 输出：</span><br><span class="hljs-comment">// Done</span><br></code></pre></td></tr></table></figure>
+
+<p>问题来了：main goroutine 很可能在子 goroutine 还没跑完之前就退出了。</p>
+<p>这就是 <code>WaitGroup</code> 的用武之地——让 main goroutine 等待所有子 goroutine 完成后再退出：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>    <span class="hljs-keyword">var</span> wg sync.WaitGroup<br><br>    wg.Add(<span class="hljs-number">10</span>)<br>    <span class="hljs-keyword">for</span> i := <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">10</span>; i++ &#123;<br>        <span class="hljs-keyword">go</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">(i <span class="hljs-type">int</span>)</span></span> &#123;<br>            <span class="hljs-keyword">defer</span> wg.Done()<br>            fmt.Println(<span class="hljs-string">&quot;Task&quot;</span>, i)<br>        &#125;(i)<br>    &#125;<br><br>    wg.Wait()<br>    fmt.Println(<span class="hljs-string">&quot;Done&quot;</span>)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>使用套路很固定：</p>
+<ul>
+<li><code>wg.Add(n)</code>：启动 goroutine 前，告诉 WaitGroup 要等几个</li>
+<li><code>wg.Done()</code>：每个 goroutine 完成后调用，计数器减一</li>
+<li><code>wg.Wait()</code>：main goroutine 在此阻塞，直到计数器归零</li>
+</ul>
+<h3 id="wg-Add-1-vs-wg-Add-n"><a href="#wg-Add-1-vs-wg-Add-n" class="headerlink" title="wg.Add(1) vs wg.Add(n)"></a>wg.Add(1) vs wg.Add(n)</h3><p>实际项目中，更推荐在每次启动 goroutine 前调用 <code>wg.Add(1)</code>，而不是在循环外一次性 <code>wg.Add(n)</code>：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">for</span> i := <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">10</span>; i++ &#123;<br>    wg.Add(<span class="hljs-number">1</span>)<br>    <span class="hljs-keyword">go</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">()</span></span> &#123;<br>        <span class="hljs-keyword">defer</span> wg.Done()<br>        <span class="hljs-comment">// ...</span><br>    &#125;()<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>原因很简单：如果循环逻辑变化了（比如加了 <code>continue</code> 跳过某些迭代），<code>wg.Add(n)</code> 的假设就失效了，程序会永远卡在 <code>wg.Wait()</code> 上，这类 bug 极难排查。</p>
+<h3 id="常见错误：在-goroutine-内部调用-Add"><a href="#常见错误：在-goroutine-内部调用-Add" class="headerlink" title="常见错误：在 goroutine 内部调用 Add"></a>常见错误：在 goroutine 内部调用 Add</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// 错误写法！</span><br><span class="hljs-keyword">for</span> i := <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">10</span>; i++ &#123;<br>    <span class="hljs-keyword">go</span> <span class="hljs-function"><span class="hljs-keyword">func</span><span class="hljs-params">()</span></span> &#123;<br>        wg.Add(<span class="hljs-number">1</span>)  <span class="hljs-comment">// ❌ 危险</span><br>        <span class="hljs-keyword">defer</span> wg.Done()<br>        <span class="hljs-comment">// ...</span><br>    &#125;()<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>wg.Add(1)</code> 必须在 goroutine 启动<strong>之前</strong>调用。如果 goroutine 还没来得及执行 <code>Add</code>，main goroutine 就已经调用了 <code>Wait()</code>，就会发生竞态问题。</p>
+<p>此外，<code>wg.Done()</code> 务必配合 <code>defer</code> 使用，防止因 panic 或多个 return 路径导致计数器永远无法归零。</p>
+<hr>
+<h2 id="sync-WaitGroup-的内部结构"><a href="#sync-WaitGroup-的内部结构" class="headerlink" title="sync.WaitGroup 的内部结构"></a>sync.WaitGroup 的内部结构</h2><p>来看源码（Go 1.26）：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> WaitGroup <span class="hljs-keyword">struct</span> &#123;<br>	noCopy noCopy<br><br>	<span class="hljs-comment">// Bits (high to low):</span><br>	<span class="hljs-comment">//   bits[0:32]  counter</span><br>	<span class="hljs-comment">//   bits[32]    flag: synctest bubble membership</span><br>	<span class="hljs-comment">//   bits[33:64] wait count</span><br>	state atomic.Uint64<br>	sema  <span class="hljs-type">uint32</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>你会注意到两个字段：<code>noCopy</code> 和 <code>state</code>。</p>
+<h3 id="noCopy：防止误拷贝"><a href="#noCopy：防止误拷贝" class="headerlink" title="noCopy：防止误拷贝"></a>noCopy：防止误拷贝</h3><p>在 Go 中，struct 赋值默认是值拷贝。但 <code>WaitGroup</code> 不能被拷贝——拷贝后两个实例的内部状态完全独立，会导致同步失效。</p>
+<p><code>noCopy</code> 就是为此设计的防护机制：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> noCopy <span class="hljs-keyword">struct</span>&#123;&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(*noCopy)</span></span> Lock()   &#123;&#125;<br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(*noCopy)</span></span> Unlock() &#123;&#125;<br></code></pre></td></tr></table></figure>
+
+<p>它本身不占用有效内存，也不影响运行时行为，只是一个<strong>标记</strong>。当你运行 <code>go vet</code> 时，它会检测到 <code>noCopy</code> 并报错：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span> &#123;<br>    <span class="hljs-keyword">var</span> a sync.WaitGroup<br>    b := a  <span class="hljs-comment">// 拷贝！</span><br><br>    fmt.Println(a, b)<br>&#125;<br><br><span class="hljs-comment">// go vet 输出：</span><br><span class="hljs-comment">// assignment copies lock value to b: sync.WaitGroup contains sync.noCopy</span><br><span class="hljs-comment">// call of fmt.Println copies lock value: sync.WaitGroup contains sync.noCopy</span><br></code></pre></td></tr></table></figure>
+
+<p>这个机制由 VictoriaMetrics CTO Aliaksandr Valialkin 贡献，引入于 <a target="_blank" rel="noopener" href="https://go-review.googlesource.com/c/go/+/22015">change #22015</a>。</p>
+<h3 id="内部状态：state-atomic-Uint64"><a href="#内部状态：state-atomic-Uint64" class="headerlink" title="内部状态：state atomic.Uint64"></a>内部状态：state atomic.Uint64</h3><p><code>state</code> 是一个 64 位整数，把两个值打包存在一起：</p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">高 <span class="hljs-number">32</span> 位 → counter：当前等待完成的 goroutine 数量<br>低 <span class="hljs-number">32</span> 位 → <span class="hljs-keyword">waiter：当前阻塞在 </span><span class="hljs-keyword">Wait() </span>的 goroutine 数量<br></code></pre></td></tr></table></figure>
+
+<p>另一个字段 <code>sema uint32</code> 是 Go runtime 内部管理的信号量。当 goroutine 调用 <code>wg.Wait()</code> 且 counter 不为零时，会调用 <code>runtime_Semacquire(&amp;wg.sema)</code> 进入睡眠，直到被 <code>runtime_Semrelease(&amp;wg.sema)</code> 唤醒。</p>
+<hr>
+<h2 id="核心问题：内存对齐"><a href="#核心问题：内存对齐" class="headerlink" title="核心问题：内存对齐"></a>核心问题：内存对齐</h2><p>这是本文的重头戏。<code>WaitGroup</code> 的内部结构在多个 Go 版本中发生变化，根本原因是<strong>32 位架构上的内存对齐问题</strong>。</p>
+<h3 id="什么是内存对齐？"><a href="#什么是内存对齐？" class="headerlink" title="什么是内存对齐？"></a>什么是内存对齐？</h3><p>CPU 访问内存时，效率最高的方式是从”对齐”的地址读取数据。对于 64 位的 <code>uint64</code>，理想情况下它的起始地址应该是 8 的倍数——CPU 可以一次取到，否则需要多次操作。</p>
+<p>在 64 位系统上，编译器会自动保证 <code>uint64</code> 的 8 字节对齐。但在 <strong>32 位架构</strong>（ARM、386、MIPS）上，编译器只保证 4 字节对齐，<code>uint64</code> 可能落在不对齐的地址上。</p>
+<p><code>atomic</code> 包的文档明确指出：</p>
+<blockquote>
+<p>“在 ARM、386 和 32 位 MIPS 上，调用方有责任确保通过原子函数访问的 64 位字是 64 位对齐的。”</p>
+</blockquote>
+<p>不对齐就会崩溃。Go 团队为此在多个版本中做出了不同的解决方案。</p>
+<hr>
+<h3 id="Go-1-5：state1-12-byte"><a href="#Go-1-5：state1-12-byte" class="headerlink" title="Go 1.5：state1 [12]byte"></a>Go 1.5：state1 [12]byte</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> WaitGroup <span class="hljs-keyword">struct</span> &#123;<br>    state1 [<span class="hljs-number">12</span>]<span class="hljs-type">byte</span><br>    sema   <span class="hljs-type">uint32</span><br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(wg *WaitGroup)</span></span> state() *<span class="hljs-type">uint64</span> &#123;<br>    <span class="hljs-keyword">if</span> <span class="hljs-type">uintptr</span>(unsafe.Pointer(&amp;wg.state1))%<span class="hljs-number">8</span> == <span class="hljs-number">0</span> &#123;<br>        <span class="hljs-keyword">return</span> (*<span class="hljs-type">uint64</span>)(unsafe.Pointer(&amp;wg.state1))<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-keyword">return</span> (*<span class="hljs-type">uint64</span>)(unsafe.Pointer(&amp;wg.state1[<span class="hljs-number">4</span>]))<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>思路：用 12 个字节的数组保存 state，总空间足够在其中找到一段 8 字节对齐的区域。</p>
+<ul>
+<li>如果 <code>state1</code> 的起始地址已经是 8 字节对齐的，直接使用前 8 字节</li>
+<li>否则，跳过前 4 字节，使用 <code>state1[4]</code> 开始的 8 字节</li>
+</ul>
+<p>代价是浪费了 4 个字节。</p>
+<hr>
+<h3 id="Go-1-11：state1-3-uint32"><a href="#Go-1-11：state1-3-uint32" class="headerlink" title="Go 1.11：state1 [3]uint32"></a>Go 1.11：state1 [3]uint32</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> WaitGroup <span class="hljs-keyword">struct</span> &#123;<br>    noCopy noCopy<br>    state1 [<span class="hljs-number">3</span>]<span class="hljs-type">uint32</span><br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(wg *WaitGroup)</span></span> state() (statep *<span class="hljs-type">uint64</span>, semap *<span class="hljs-type">uint32</span>) &#123;<br>    <span class="hljs-keyword">if</span> <span class="hljs-type">uintptr</span>(unsafe.Pointer(&amp;wg.state1))%<span class="hljs-number">8</span> == <span class="hljs-number">0</span> &#123;<br>        <span class="hljs-keyword">return</span> (*<span class="hljs-type">uint64</span>)(unsafe.Pointer(&amp;wg.state1)), &amp;wg.state1[<span class="hljs-number">2</span>]<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-keyword">return</span> (*<span class="hljs-type">uint64</span>)(unsafe.Pointer(&amp;wg.state1[<span class="hljs-number">1</span>])), &amp;wg.state1[<span class="hljs-number">0</span>]<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>改为 3 个 <code>uint32</code> 的数组（共 12 字节），同时把 <code>sema</code> 也打包进来，根据对齐情况动态调整布局：</p>
+<ul>
+<li><strong>8 字节对齐时</strong>：<code>state1[0..1]</code> 存 state，<code>state1[2]</code> 存 sema</li>
+<li><strong>4 字节对齐时</strong>：<code>state1[0]</code> 存 sema，<code>state1[1..2]</code> 存 state</li>
+</ul>
+<hr>
+<h3 id="Go-1-18：state1-uint64-state2-uint32"><a href="#Go-1-18：state1-uint64-state2-uint32" class="headerlink" title="Go 1.18：state1 uint64; state2 uint32"></a>Go 1.18：state1 uint64; state2 uint32</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> WaitGroup <span class="hljs-keyword">struct</span> &#123;<br>    noCopy noCopy<br>    state1 <span class="hljs-type">uint64</span><br>    state2 <span class="hljs-type">uint32</span><br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(wg *WaitGroup)</span></span> state() (statep *<span class="hljs-type">uint64</span>, semap *<span class="hljs-type">uint32</span>) &#123;<br>    <span class="hljs-keyword">if</span> unsafe.Alignof(wg.state1) == <span class="hljs-number">8</span> || <span class="hljs-type">uintptr</span>(unsafe.Pointer(&amp;wg.state1))%<span class="hljs-number">8</span> == <span class="hljs-number">0</span> &#123;<br>        <span class="hljs-keyword">return</span> &amp;wg.state1, &amp;wg.state2<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        state := (*[<span class="hljs-number">3</span>]<span class="hljs-type">uint32</span>)(unsafe.Pointer(&amp;wg.state1))<br>        <span class="hljs-keyword">return</span> (*<span class="hljs-type">uint64</span>)(unsafe.Pointer(&amp;state[<span class="hljs-number">1</span>])), &amp;state[<span class="hljs-number">0</span>]<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>优先为更普遍的 64 位系统优化：直接用 <code>uint64</code> 存 state，<code>uint32</code> 存 sema。在 32 位系统上回退到 Go 1.11 的方案。</p>
+<hr>
+<h3 id="Go-1-20：state-atomic-Uint64（现代方案）"><a href="#Go-1-20：state-atomic-Uint64（现代方案）" class="headerlink" title="Go 1.20：state atomic.Uint64（现代方案）"></a>Go 1.20：state atomic.Uint64（现代方案）</h3><p>Go 1.19 引入了 <code>atomic.Uint64</code>，由 Russ Cox 设计：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> Uint64 <span class="hljs-keyword">struct</span> &#123;<br>    _ noCopy<br>    _ align64<br>    v <span class="hljs-type">uint64</span><br>&#125;<br><br><span class="hljs-comment">// align64 是一个特殊标记，被编译器识别</span><br><span class="hljs-comment">// 用于强制要求结构体 8 字节对齐</span><br><span class="hljs-keyword">type</span> align64 <span class="hljs-keyword">struct</span>&#123;&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>align64</code> 是空结构体，不占内存，但编译器认识它——一旦结构体中包含 <code>align64</code>，编译器就会自动在内存布局中插入必要的 padding，确保整个结构体从 8 字节对齐的地址开始。</p>
+<p>有了 <code>atomic.Uint64</code>，<code>WaitGroup</code> 的结构彻底简化，<code>state()</code> 方法也不再需要：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-keyword">type</span> WaitGroup <span class="hljs-keyword">struct</span> &#123;<br>    noCopy noCopy<br><br>    state atomic.Uint64<br>    sema  <span class="hljs-type">uint32</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>优雅，干净，不再需要任何对齐 hack。</p>
+<hr>
+<h2 id="WaitGroup-内部如何工作？"><a href="#WaitGroup-内部如何工作？" class="headerlink" title="WaitGroup 内部如何工作？"></a>WaitGroup 内部如何工作？</h2><p>你可能会问：为什么要把 counter 和 waiter 打包进同一个 <code>uint64</code>，而不是分开用两个 <code>uint32</code>？</p>
+<p>用两个独立变量配合 mutex 来保护确实更简单，但 mutex 有加锁开销，在高频操作下会成为瓶颈。</p>
+<p>打包成一个 <code>uint64</code> 后，可以用<strong>原子操作</strong>同时读写两个字段，完全无锁。</p>
+<h3 id="wg-Add-delta-int"><a href="#wg-Add-delta-int" class="headerlink" title="wg.Add(delta int)"></a>wg.Add(delta int)</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(wg *WaitGroup)</span></span> Add(delta <span class="hljs-type">int</span>) &#123;<br>    <span class="hljs-comment">// 将 delta 加到高 32 位（counter）</span><br>    state := wg.state.Add(<span class="hljs-type">uint64</span>(delta) &lt;&lt; <span class="hljs-number">32</span>)<br><br>    v := <span class="hljs-type">int32</span>(state &gt;&gt; <span class="hljs-number">32</span>)  <span class="hljs-comment">// 取 counter</span><br>    w := <span class="hljs-type">uint32</span>(state)       <span class="hljs-comment">// 取 waiter</span><br><br>    <span class="hljs-keyword">if</span> v &lt; <span class="hljs-number">0</span> &#123;<br>        <span class="hljs-built_in">panic</span>(<span class="hljs-string">&quot;sync: negative WaitGroup counter&quot;</span>)<br>    &#125;<br>    <span class="hljs-keyword">if</span> w != <span class="hljs-number">0</span> &amp;&amp; delta &gt; <span class="hljs-number">0</span> &amp;&amp; v == <span class="hljs-type">int32</span>(delta) &#123;<br>        <span class="hljs-built_in">panic</span>(<span class="hljs-string">&quot;sync: WaitGroup misuse: Add called concurrently with Wait&quot;</span>)<br>    &#125;<br>    <span class="hljs-keyword">if</span> v &gt; <span class="hljs-number">0</span> || w == <span class="hljs-number">0</span> &#123;<br>        <span class="hljs-keyword">return</span><br>    &#125;<br>    <span class="hljs-keyword">if</span> wg.state.Load() != state &#123;<br>        <span class="hljs-built_in">panic</span>(<span class="hljs-string">&quot;sync: WaitGroup misuse: Add called concurrently with Wait&quot;</span>)<br>    &#125;<br><br>    <span class="hljs-comment">// counter 归零，唤醒所有等待的 goroutine</span><br>    wg.state.Store(<span class="hljs-number">0</span>)<br>    <span class="hljs-keyword">for</span> ; w != <span class="hljs-number">0</span>; w-- &#123;<br>        runtime_Semrelease(&amp;wg.sema, <span class="hljs-literal">false</span>, <span class="hljs-number">0</span>)<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>关键点：</p>
+<ul>
+<li>counter 存在高 32 位，所以 <code>delta &lt;&lt; 32</code> 才是对 counter 的操作</li>
+<li>当 counter 降到 0 且有等待者时，重置 state 并逐个释放信号量唤醒所有 waiter</li>
+<li><code>wg.Done()</code> 就是 <code>wg.Add(-1)</code> 的别名</li>
+</ul>
+<p><strong>注意</strong>：如果要复用 WaitGroup 处理多批任务，必须等上一轮所有 <code>Wait()</code> 调用返回后，才能开始下一轮的 <code>Add(正数)</code> 调用。</p>
+<h3 id="wg-Wait"><a href="#wg-Wait" class="headerlink" title="wg.Wait()"></a>wg.Wait()</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-function"><span class="hljs-keyword">func</span> <span class="hljs-params">(wg *WaitGroup)</span></span> Wait() &#123;<br>    <span class="hljs-keyword">for</span> &#123;<br>        state := wg.state.Load()<br>        v := <span class="hljs-type">int32</span>(state &gt;&gt; <span class="hljs-number">32</span>)  <span class="hljs-comment">// counter</span><br>        w := <span class="hljs-type">uint32</span>(state)       <span class="hljs-comment">// waiter</span><br><br>        <span class="hljs-keyword">if</span> v == <span class="hljs-number">0</span> &#123;<br>            <span class="hljs-keyword">return</span>  <span class="hljs-comment">// counter 已为零，直接返回</span><br>        &#125;<br><br>        <span class="hljs-comment">// CAS：尝试将 waiter+1</span><br>        <span class="hljs-keyword">if</span> wg.state.CompareAndSwap(state, state+<span class="hljs-number">1</span>) &#123;<br>            runtime_Semacquire(&amp;wg.sema)  <span class="hljs-comment">// 阻塞，等待被唤醒</span><br><br>            <span class="hljs-keyword">if</span> wg.state.Load() != <span class="hljs-number">0</span> &#123;<br>                <span class="hljs-built_in">panic</span>(<span class="hljs-string">&quot;sync: WaitGroup is reused before previous Wait has returned&quot;</span>)<br>            &#125;<br>            <span class="hljs-keyword">return</span><br>        &#125;<br>        <span class="hljs-comment">// CAS 失败（其他 goroutine 修改了 state），重试</span><br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>Wait()</code> 用 CAS 循环安全地增加 waiter 计数，然后通过信号量进入睡眠。当最后一个 goroutine 调用 <code>Done()</code> 使 counter 归零时，<code>Add()</code> 会调用 <code>runtime_Semrelease</code> 逐个唤醒所有 waiter。</p>
+<hr>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><table>
+<thead>
+<tr>
+<th>Go 版本</th>
+<th>state 字段类型</th>
+<th>对齐方案</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1.5</td>
+<td><code>[12]byte</code></td>
+<td>运行时检查地址，偏移 0 或 4 字节</td>
+</tr>
+<tr>
+<td>1.11</td>
+<td><code>[3]uint32</code></td>
+<td>运行时检查地址，动态调整布局</td>
+</tr>
+<tr>
+<td>1.18</td>
+<td><code>uint64 + uint32</code></td>
+<td>优先 64 位，fallback 到 1.11 方案</td>
+</tr>
+<tr>
+<td>1.20+</td>
+<td><code>atomic.Uint64</code></td>
+<td>编译器通过 <code>align64</code> 自动保证对齐</td>
+</tr>
+</tbody></table>
+<p><code>sync.WaitGroup</code> 的演化历程是一个很好的案例：底层的内存模型约束如何驱动上层 API 实现的持续演进，最终以优雅的编译器支持收尾。</p>
+<p>理解这些细节，不仅能帮你用好 WaitGroup，也能让你在设计需要原子操作的数据结构时少踩坑。</p>
+<hr>
+<blockquote>
+<p>如果你觉得有收获，欢迎分享给更多 Gopher。</p>
+</blockquote>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Go/" class="print-no-link">#Go</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>go-wait-group</div>
+      <div>https://blog.zhangliangliang.cc/post/go-wait-group.html</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Bobby Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年4月22日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/post/generic-interfaces.html" title="泛型接口">
+                        <span class="hidden-mobile">泛型接口</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
