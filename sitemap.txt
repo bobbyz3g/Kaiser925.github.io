@@ -1,3 +1,5 @@
+https://blog.zhangliangliang.cc/about/index.html
+https://blog.zhangliangliang.cc/post/go-web-framework.html
 https://blog.zhangliangliang.cc/post/go-wait-group.html
 https://blog.zhangliangliang.cc/post/generic-interfaces.html
 https://blog.zhangliangliang.cc/post/mysql-character-set.html
@@ -72,7 +74,6 @@ https://blog.zhangliangliang.cc/post/why-need-helm.html
 https://blog.zhangliangliang.cc/post/workqueue.html
 https://blog.zhangliangliang.cc/post/goroutine-stop.html
 https://blog.zhangliangliang.cc/tags/index.html
-https://blog.zhangliangliang.cc/about/index.html
 https://blog.zhangliangliang.cc/
 https://blog.zhangliangliang.cc/tags/MySQL/
 https://blog.zhangliangliang.cc/tags/Go/

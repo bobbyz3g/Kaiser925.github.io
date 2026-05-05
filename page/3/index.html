@@ -307,6 +307,46 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
+        <a href="/post/raft-log-replica.html" target="_self">
+          raft 日志复制
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/post/raft-log-replica.html" target="_self">
+        <div>
+          在上一篇的内容中，我们学习了 raft 的 Leader 选举。在这一篇中，我们将学习 raft 的日志复制。 在 raft 算法中，副本数据是以日志（Log）的形式存在的。在收到来自客户端的信息后，Leader 会复制日志到 Follower，并 Apply 到状态机。 日志是什么日志是由日志项组成的，每个日志项代表一条数据操作命令。 日志项的格式分为三个部分，分别是  Index: 日志项的索
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-11-13 21:45" pubdate>
+              2023-11-13
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/raft/">#raft</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
         <a href="/post/raft-leader-election.html" target="_self">
           raft Leader 选举
         </a>
@@ -656,46 +696,6 @@
               <a href="/tags/%E9%87%8D%E6%9E%84/">#重构</a>
             
               <a href="/tags/%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/">#读书笔记</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/post/go-buffer-less-multipart-form.html" target="_self">
-          Go 低内存大文件上传
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/post/go-buffer-less-multipart-form.html" target="_self">
-        <div>
-          介绍当涉及到文件上传时，低内存占用的客户端是非常重要的。在本篇博客中，我们将介绍如何使用Go语言实现一个低内存占用的HTTP文件上传客户端。 流程首先，让我们先讨论一下HTTP文件上传的基本原理。HTTP文件上传是通过POST请求向服务器发送数据的。请求的头部包含文件的元数据，请求的主体则包含文件的二进制数据。由于HTTP请求和响应在网络上传输的过程中可能会被分割成多个小块，因此上传大文件时会占用
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2023-02-14 21:42" pubdate>
-              2023-02-14
-            </time>
-          </div>
-        
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Go/">#Go</a>
             
           </div>
         

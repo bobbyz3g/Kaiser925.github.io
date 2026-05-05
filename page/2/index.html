@@ -307,6 +307,46 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
+        <a href="/post/go-command-pipe.html" target="_self">
+          Go 使用管道连接 Command
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/post/go-command-pipe.html" target="_self">
+        <div>
+          在 posix 系统中，我们可以使用 | 来连接两个命令，从而将前一个命令的标准输出作为后一个命令的标准输入，就像下面这个例子一样 1ls | grep go  我们首先使用 ls 命令获取到当前目录的文件，然后将输出传递给 grep 命令，从文件列表中过滤带有 go 的文件。 那么我们可以在 Go 实现类似管道的操作吗，将多个 Cmd 连接起来。答案是可以的，并且十分的简单，只需使用标准库的能力
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2024-01-23 21:50" pubdate>
+              2024-01-23
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Go/">#Go</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
         <a href="/post/build-own-gemini-chat.html" target="_self">
           搭建一个 Gemini 聊天网页
         </a>
@@ -656,46 +696,6 @@
               <a href="/tags/MySQL/">#MySQL</a>
             
               <a href="/tags/Go/">#Go</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/post/raft-log-replica.html" target="_self">
-          raft 日志复制
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/post/raft-log-replica.html" target="_self">
-        <div>
-          在上一篇的内容中，我们学习了 raft 的 Leader 选举。在这一篇中，我们将学习 raft 的日志复制。 在 raft 算法中，副本数据是以日志（Log）的形式存在的。在收到来自客户端的信息后，Leader 会复制日志到 Follower，并 Apply 到状态机。 日志是什么日志是由日志项组成的，每个日志项代表一条数据操作命令。 日志项的格式分为三个部分，分别是  Index: 日志项的索
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2023-11-13 21:45" pubdate>
-              2023-11-13
-            </time>
-          </div>
-        
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/raft/">#raft</a>
             
           </div>
         

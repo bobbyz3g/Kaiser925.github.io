@@ -307,6 +307,46 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
+        <a href="/post/generate-private-key-for-jwt.html" target="_self">
+          为 JWT 生成私钥
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/post/generate-private-key-for-jwt.html" target="_self">
+        <div>
+          今天在写一个登录鉴权的接口，用到了 JWT，JWT 的签名与认证需要用到一对公私钥。所以需要在本地生成一对密钥。 方法很简单，只需要用到 ssh-keygen 和 openssl 即可，如果命令行下没有这两个工具，可以通过 homebrew 来安装。 生成的方法代码如下： 1234# 首先生成私钥文件，在生成过程中不要输入密码ssh-keygen -t rsa -b 4096 -m PEM -f
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2021-02-07 23:24" pubdate>
+              2021-02-07
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E6%97%A5%E5%B8%B8/">#日常</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
         <a href="/post/go-append-tip.html" target="_self">
           Go append 的小技巧
         </a>
@@ -654,46 +694,6 @@
             <i class="iconfont icon-tags"></i>
             
               <a href="/tags/shell/">#shell</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/post/lexical-analysis.html" target="_self">
-          词法分析
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/post/lexical-analysis.html" target="_self">
-        <div>
-          介绍在之前的文章中，了解了什么是语言处理器，具体见这里。接下来就是详细了解一下编译器的结构。 整体来看，一个编译器分为前端以及后端两个部分。 前端也就是分析部分，在这个阶段，编译器会将源程序分解成多个组成要素，然后在这些要素上加上语法结构，之后就会利用这个语法结构去创建程序的中间表示。 分析会对程序的语法，语义进行分析，如果存在不一致的情况，编译器就会返回相应的信息。与此同时，分析部分会搜集程序的
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2020-01-16 21:40" pubdate>
-              2020-01-16
-            </time>
-          </div>
-        
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/%E7%BC%96%E8%AF%91%E5%8E%9F%E7%90%86/">#编译原理</a>
             
           </div>
         
