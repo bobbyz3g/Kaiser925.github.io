@@ -1,3 +1,4 @@
+https://blog.zhangliangliang.cc/post/go-closure-variable.html
 https://blog.zhangliangliang.cc/about/index.html
 https://blog.zhangliangliang.cc/post/go-web-framework.html
 https://blog.zhangliangliang.cc/post/go-wait-group.html

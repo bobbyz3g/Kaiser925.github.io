@@ -307,6 +307,46 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
+        <a href="/post/close-goroutines.html" target="_self">
+          多生产者关闭 Goroutine
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/post/close-goroutines.html" target="_self">
+        <div>
+          在本篇文章中，将介绍如何在多个生产者完成生产后关闭 goroutine. 在编程中，我们会遇到多个生产者，单一消费者的场景。 在这种情况下，工作流会分为了两个 stage:  Stage 1: 多个生产者并发地计算结果，并将结果传入 channel Stage 2: 消费者从 channel 中读取结果，做下一步的计算  在两个 stage 完成工作后程序自然退出，因此需要在所有生产者完成工作后，
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2021-06-25 09:43" pubdate>
+              2021-06-25
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Go/">#Go</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
         <a href="/post/generate-private-key-for-jwt.html" target="_self">
           为 JWT 生成私钥
         </a>
@@ -654,46 +694,6 @@
             <i class="iconfont icon-tags"></i>
             
               <a href="/tags/Python/">#Python</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/post/shell-tips.html" target="_self">
-          Shell Tips 💡
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/post/shell-tips.html" target="_self">
-        <div>
-          一些关于 shell 的笔记 权限判断在执行脚本时，确定当前的权限是否为 root 代码： 1234if [ &quot;$EUID&quot; -ne 0 ]  then echo &quot;not root&quot;  exitfi  EUID, 用于系统决定用户对系统资源的访问权限，等于 0 时表示权限为 root。 路径判断判断一个文件夹是否存在 代码： 123if [ -d &quo
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2020-02-27 20:56" pubdate>
-              2020-02-27
-            </time>
-          </div>
-        
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/shell/">#shell</a>
             
           </div>
         

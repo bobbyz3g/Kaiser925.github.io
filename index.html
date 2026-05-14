@@ -307,6 +307,46 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
+        <a href="/post/go-closure-variable.html" target="_self">
+          Go 闭包：你以为保存了快照，其实创建了共享状态
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/post/go-closure-variable.html" target="_self">
+        <div>
+          你好，我是 Bobby。 Go 里的闭包很顺手。函数里返回一个函数，或者把匿名函数交给 defer、go、http.HandlerFunc，代码都很短。 但闭包有一个容易误判的行为：它引用的是外层变量，创建闭包时不会自动把变量值复制一份保存下来。 麻烦通常出在这里：我们以为自己保存了一个快照，实际创建了一个会继续读取外部变量的函数。 这篇文章主要参考 Go 语言规范里的 Function lite
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-05-14 00:00" pubdate>
+              2026-05-14
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Go/">#Go</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
         <a href="/post/go-web-framework.html" target="_self">
           Go Web 框架怎么选
         </a>
@@ -654,48 +694,6 @@
             <i class="iconfont icon-tags"></i>
             
               <a href="/tags/Go/">#Go</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/post/etcd-cluster-operation-guide.html" target="_self">
-          etcd 集群运维
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/post/etcd-cluster-operation-guide.html" target="_self">
-        <div>
-          etcd 简介etcd 是一个开源的、分布式的键值存储数据库，用于存储配置数据、服务注册和发现等。etcd 具有高可用性、强一致性和简单易用的特点，被广泛应用于各种分布式系统中。 etcd 基于 Raft 协议，通过复制日志文件的方式来保证数据的强一致性。 历史和发展“etcd” 源于两个方面，unix 的“/etc”文件夹和分布式系统 (“D”istribute system) 的 D，组合在一
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2024-02-19 22:14" pubdate>
-              2024-02-19
-            </time>
-          </div>
-        
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/etcd/">#etcd</a>
-            
-              <a href="/tags/operations/">#operations</a>
             
           </div>
         
